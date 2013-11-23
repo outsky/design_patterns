@@ -1,1 +1,1 @@
-study design pattern
+study design patterns
