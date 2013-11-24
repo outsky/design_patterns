@@ -10,7 +10,7 @@ void quit(int);
 
 int main(int argc, char* argv[]) {
     if(argc != 2) {
-        std::cout << "[x] USAGE: " << argv[0] << " [port]" << std::endl;
+        std::cout << "[x] USAGE: " << argv[0] << " port" << std::endl;
         exit(-1);
     }
 

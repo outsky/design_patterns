@@ -9,14 +9,14 @@
 void* trd_read(void*);
 
 int main(int argc, char* argv[]) {
-    if(argc != 4) {
-        std::cout << "[x] USAGE: " << argv[0] << " [name] [ip] [port]" << std::endl;
+    if(argc!=4 && argc!=3) {
+        std::cout << "[x] USAGE: " << argv[0] << " name [ip] port" << std::endl;
         exit(-1);
     }
 
     const char* name = argv[1];
-    const char* ip = argv[2];
-    int port = atoi(argv[3]);
+    const char* ip = argc==4 ? argv[2] : "127.0.0.1";
+    int port = atoi(argc==4 ? argv[3] : argv[2]);
     client c(name, ip, port);
 
     pthread_t pid;
