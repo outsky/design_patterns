@@ -11,6 +11,9 @@
 #include "server.h"
 #include "msg.h"
 
+#include "../reactor.h"
+#include "server_handler.h"
+
 FILE* logfile = NULL;
 
 server::server(int port) {
@@ -30,53 +33,16 @@ server::~server() {
     fclose(logfile);
 }
 
-void* trd_read(void* p) {
-    const char* types[2];
-    types[msg::info-1] = "?";
-    types[msg::err-1] = "x";
-
-    int fd = *(int*)p;
-    int len = -1;
-    char buf[128];
-
-    while((len=read(fd, buf, sizeof(int))) == sizeof(int)) {
-        buf[len] = '\0';
-        int size = *(int*)buf;
-        if((len=recv(fd, buf+sizeof(int), size, MSG_WAITALL)) != size)
-            break;
-
-        struct msg* msg = (struct msg*)buf;
-        char tmp[128];
-        sprintf(tmp, "[%s]> %s %s\n", msg->name, types[msg->type-1], msg->data);
-        fwrite(tmp, sizeof(char), strlen(tmp), logfile);
-        fflush(logfile);
-        std::cout << tmp << std::endl;
-    }
-    if(len == 0)
-        std::cout << "[!] client disconnected " << fd << std::endl;
-    else
-        std::cout << "[x] error read from client " << fd << ": " << strerror(errno) << std::endl;
-    close(fd);
-    return NULL;
-}
-
 void server::run() {
     running = true;
-    int fd = -1;
-    while( running ) {
-        if((fd=accept(listenfd, NULL, NULL)) == -1) {
-            std::cout << "[!] accept: " << strerror(errno) << std::endl;
-            continue;
-        }
-        std::cout << "[?] accept new connection " << fd << std::endl;
 
-        pthread_t tid;
-        if(pthread_create(&tid, NULL, trd_read, &fd) != 0) {
-            std::cout << "[!] create read thread failed: " << strerror(errno) << std::endl;
-            close(fd);
-        }
-        pthread_detach(tid);
-    }
+    // register accept handler to accept new connections
+    accept_handler* acpt_handler = new accept_handler(listenfd);
+    reactor::instance()->register_handler(READ, acpt_handler);
+
+    // events demultiplex and dispatch
+    while( running )
+        reactor::instance()->handle_events();
 }
 
 bool server::listen(int port) {

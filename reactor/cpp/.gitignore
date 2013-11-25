@@ -2,3 +2,6 @@ test/client
 test/log
 test/server
 tags
+
+core
+core.*

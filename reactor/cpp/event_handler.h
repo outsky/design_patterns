@@ -1,11 +1,13 @@
 #ifndef EVENTHANDLER_H
 #define EVENTHANDLER_H
 
+#include "event.h"
+
 class event_handler {
     public:
-        void handle_read() = 0;
-        void handle_write() = 0;
-        handle_t get_handle() = 0;
+        virtual void handle_read() {}
+        virtual void handle_write() {}
+        virtual handle_t get_handle() = 0;
 };
 
 #endif
