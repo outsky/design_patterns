@@ -18,4 +18,4 @@ pattern core
 
 test case
 ---------
-see test/README.md
+see [./test/README.md](https://github.com/outsky/design_patterns/reactor/cpp/test/README.md "doc for reactor test case")
