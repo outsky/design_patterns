@@ -17,13 +17,12 @@ int main(int argc, char* argv[]) {
     char* str = readline("inputs a string: ");
     while( true ) {
         char* choice = readline(alg);
-        if(choice==NULL || choice[0]=='\0')
+        int t = 0;
+        if(choice==NULL || choice[0]=='\0' ||
+                (t=atoi(choice))<0 || t>3) {
+            free(choice);
             break;
-
-        int t = atoi(choice);
-        free(choice);
-        if(t<0 || t>3)
-            break;
+        }
 
         str_processor sp(TYPE[t]);
         char* str_tmp = strdup(str);
