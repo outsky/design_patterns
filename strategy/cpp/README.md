@@ -14,3 +14,16 @@ The algorithms user can choose are:
 * to uppercase
 * to lowercase
 * remove spaces
+
+STRUCTURE
+=========
+`stralg` : strategy
+    * declares an interface common to all supported algorithms
+    * `str_processor` uses this interface to call the algorithm defined by a concrete `stralg`
+
+`stralg_lower` `stralg_upper` `stralg_trim` : concrete strategy
+    * implements the algorithm using the `stralg` interface
+
+`str_processor`: context
+    * is configured with a concrete `stralg` object
+    * maintains a reference to a `stralg` object
