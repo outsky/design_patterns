@@ -13,5 +13,4 @@ The example reads a string inputed by user, and then process the string accordin
 The algorithms user can choose are:
 * to uppercase
 * to lowercase
-* remove white spaces
-* odd words to uppercase and even words to lowercase
+* remove spaces
