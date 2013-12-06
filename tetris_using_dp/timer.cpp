@@ -1,23 +1,28 @@
 #include "timer.h"
 
-static struct timer* TIMER = NULL;
+timer* timer::ins = NULL;
 
-void timer_init() {
-    TIMER = (struct timer*)malloc(sizeof(struct timer));
-    timer_reset();
+timer::timer() {
+    reset();
 }
 
-void timer_update() {
+timer* timer::instance() {
+    if(ins == NULL)
+        ins = new timer();
+    return ins;
+}
+
+void timer::update() {
     struct timeval now;
     gettimeofday(&now, NULL);
-    TIMER->interval = (now.tv_sec-TIMER->last.tv_sec)*1000 + (now.tv_usec-TIMER->last.tv_usec)/1000;
+    interval = (now.tv_sec-last.tv_sec)*1000 + (now.tv_usec-last.tv_usec)/1000;
 }
 
-int timer_interval() {
-    return TIMER->interval;
+int timer::get_interval() {
+    return interval;
 }
 
-void timer_reset(void) {
-    gettimeofday(&TIMER->last, NULL);
-    TIMER->interval = 0;
+void timer::reset(void) {
+    gettimeofday(&last, NULL);
+    interval = 0;
 }

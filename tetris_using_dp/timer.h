@@ -4,14 +4,21 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-struct timer {
-    struct timeval last;
-    int interval; // ms
-};
+class timer {
+    public:
+        static timer* instance();
 
-void timer_init();
-void timer_update();
-int timer_interval();
-void timer_reset(void);
+        void update();
+        int get_interval();
+        void reset(void);
+
+    private:
+        timer();
+
+    private:
+        static timer* ins;
+        struct timeval last;
+        int interval; // ms
+};
 
 #endif

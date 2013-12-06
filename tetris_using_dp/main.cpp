@@ -82,12 +82,11 @@ static void* trd_draw(void* p) {
 }
 
 static void* trd_timer(void* p) {
-    timer_init();
     for(;;) {
-        timer_update();
-        if(timer_interval() >= speeds[tetris_logic::instance()->level]) {
+        timer::instance()->update();
+        if(timer::instance()->get_interval() >= speeds[tetris_logic::instance()->level]) {
             game::instance()->move_down();
-            timer_reset();
+            timer::instance()->reset();
         }
         usleep(50);
     }
