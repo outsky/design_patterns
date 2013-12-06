@@ -3,6 +3,7 @@
 #include <sys/ioctl.h>
 #include <string.h>
 #include <signal.h>
+#include <pthread.h>
 
 #include "game.h"
 #include "graphic.h"

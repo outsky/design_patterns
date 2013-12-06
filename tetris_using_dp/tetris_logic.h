@@ -1,7 +1,8 @@
 #ifndef TETRIS_LOGIC_H
 #define TETRIS_LOGIC_H
 
-#include <pthread.h>
+extern int speeds[];
+extern int levels[];
 
 class tetris_logic {
     public:
@@ -75,8 +76,5 @@ class tetris_logic {
         int nexttyp;
         int nextstate;
 };
-
-extern int speeds[];
-extern int levels[];
 
 #endif
