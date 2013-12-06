@@ -17,7 +17,7 @@ The algorithms user can choose are:
 
 STRUCTURE
 =========
-`stralg` : strategy
+`__stralg__` : strategy
     * declares an interface common to all supported algorithms
     * `str_processor` uses this interface to call the algorithm defined by a concrete `stralg`
 
