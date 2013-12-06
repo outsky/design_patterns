@@ -26,7 +26,7 @@ int main() {
     sigaction(SIGINT, &sa, NULL);
     atexit(quit);
     control::instance()->prepare_input();
-    erase_display();
+    graphic::erase_display();
 
     srand(time(NULL));
     game::instance()->draw();
@@ -62,9 +62,9 @@ int main() {
 }
 
 static void quit(void) {
-    restore();
+    graphic::restore();
     control::instance()->restore_input();
-    erase_display();
+    graphic::erase_display();
     pthread_mutex_destroy(&mut);
     pthread_cond_destroy(&cond);
     printf("\n");
