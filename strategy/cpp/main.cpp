@@ -23,6 +23,7 @@ int main(int argc, char* argv[]) {
             free(choice);
             break;
         }
+        free(choice);
 
         str_processor sp(TYPE[t]);
         char* str_tmp = strdup(str);
