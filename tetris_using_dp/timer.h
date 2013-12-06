@@ -4,8 +4,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-struct timer 
-{
+struct timer {
     struct timeval last;
     int interval; // ms
 };
