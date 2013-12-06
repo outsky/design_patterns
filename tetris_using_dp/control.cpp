@@ -1,46 +1,58 @@
 #include <stdio.h>
+
 #include "control.h"
 
-void cursor_to(int line, int col) {
+control* control::ins = NULL;
+
+control::control() {
+}
+
+control* control::instance() {
+    if(ins == NULL)
+        ins = new control();
+    return ins;
+}
+
+void control::cursor_to(int line, int col) {
     printf("\033[%d;%dH", col, line);
 }
 
-void cursor_up(int n) {
+void control::cursor_up(int n) {
     printf("\033[%dA", n);
 }
 
-void cursor_down(int n) {
+void control::cursor_down(int n) {
     printf("\033[%dB", n);
 }
 
-void cursor_left(int n) {
+void control::cursor_left(int n) {
     printf("\033[%dD", n);
 }
 
-void cursor_right(int n) {
+void control::cursor_right(int n) {
     printf("\033[%dC", n);
 }
 
-void cursor_save() {
+void control::cursor_save() {
     printf("\033[s");
 }
 
-void cursor_restore() {
+void control::cursor_restore() {
     printf("\033[u");
 }
 
-void cursor_hide() {
+void control::cursor_hide() {
     printf("\033[?25l");
 }
 
-void cursor_show() {
+void control::cursor_show() {
     printf("\033[?25h");
 }
 
-void prepare_input(struct termios* org) {
+void control::prepare_input() {
     struct termios tm;
-    tcgetattr(0, org);
-    tm = *org;
+    tcgetattr(0, &tm_org);
+    tm = tm_org;
     tm.c_lflag &= (~ICANON);
     tm.c_lflag &= (~(ECHO|ECHOE|ECHOK|ECHONL));
     tm.c_cc[VTIME] = 0;
@@ -50,7 +62,7 @@ void prepare_input(struct termios* org) {
     cursor_hide();
 }
 
-void restore_input(const struct termios* org) {
-    tcsetattr(0, TCSANOW, org);
+void control::restore_input() {
+    tcsetattr(0, TCSANOW, &tm_org);
     cursor_show();
 }

@@ -19,14 +19,13 @@ static void quit(void);
 static void* trd_draw(void*);
 static void* trd_timer(void*);
 
-struct termios org;
 int main() {
     struct sigaction sa;
     memset(&sa, 0, sizeof(struct sigaction));
     sa.sa_handler = sigint;
     sigaction(SIGINT, &sa, NULL);
     atexit(quit);
-    prepare_input(&org);
+    control::instance()->prepare_input();
     erase_display();
 
     srand(time(NULL));
@@ -64,7 +63,7 @@ int main() {
 
 static void quit(void) {
     restore();
-    restore_input(&org);
+    control::instance()->restore_input();
     erase_display();
     pthread_mutex_destroy(&mut);
     pthread_cond_destroy(&cond);
