@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include "timer.h"
 #include "tetris_logic.h"
 
 class game {
@@ -14,7 +15,6 @@ class game {
 
     public:
         static game* instance();
-        void draw();
 
         void move_down();
         void move_left();
@@ -22,10 +22,23 @@ class game {
         void drop_down();
         void rotate();
 
+        void draw();
         void adjust_position();
+
+        void prepare();
+        void run();
+        void quit();
 
     private:
         game();
+
+        static void sigint(int);
+        static void on_quit(void);
+        void quit_handler_init();
+
+        static void* trd_draw(void*);
+        static void* trd_timer(void*);
+
         void draw_playgrd(void);
         void draw_preview(void);
         void draw_linerecord(void);
@@ -50,6 +63,7 @@ class game {
     private:
         static game* ins;
         tetris_logic* logic;
+        timer* tm;
 };
 
 #endif

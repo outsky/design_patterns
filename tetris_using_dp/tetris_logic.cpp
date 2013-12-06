@@ -8,13 +8,16 @@ int levels[MAXLEVEL] = {25, 50, 100, 180, 280, 400, 550, 700, 900, 1200, 1500};
 static int scores[4] = {1, 5, 10, 20};
 int speeds[MAXLEVEL] = {1000, 950, 900, 850, 800, 750, 700, 650, 600, 550, 500};
 
-pthread_cond_t cond;
-pthread_mutex_t mut;
-
 tetris_logic* tetris_logic::ins = NULL;
 
 tetris_logic::tetris_logic() {
-    game_init();
+    pthread_mutex_init(&mut, NULL);
+    pthread_cond_init(&cond, NULL);
+
+    srand(time(NULL));
+    nexttyp = rand()%7 + 2;
+    nextstate = rand()%4;
+    next();
 }
 
 tetris_logic* tetris_logic::instance() {
@@ -23,10 +26,9 @@ tetris_logic* tetris_logic::instance() {
     return ins;
 }
 
-void tetris_logic::game_init() {
-    nexttyp = rand()%7 + 2;
-    nextstate = rand()%4;
-    next();
+void tetris_logic::destroy() {
+    pthread_mutex_destroy(&mut);
+    pthread_cond_destroy(&cond);
 }
 
 int tetris_logic::can_move_down() {

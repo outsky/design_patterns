@@ -16,7 +16,7 @@ class tetris_logic {
 
     public:
         static tetris_logic* instance();
-        void game_init();
+        void destroy();
 
         int move_down();
         int move_right();
@@ -57,6 +57,9 @@ class tetris_logic {
     public:
         static const int lines = 20;
         static const int cols = 10;
+        pthread_cond_t cond;
+        pthread_mutex_t mut;
+
         int curtype;
         struct pos cur[4];
         int playgrd[lines][cols]; // 0(empty); 1(active); 2(I); 3(J); 4(L); 5(O); 6(S); 7(T); 8(Z)
@@ -75,8 +78,5 @@ class tetris_logic {
 
 extern int speeds[];
 extern int levels[];
-
-extern pthread_cond_t cond;
-extern pthread_mutex_t mut;
 
 #endif

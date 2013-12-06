@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <string.h>
+#include <signal.h>
 
 #include "game.h"
 #include "graphic.h"
@@ -23,6 +24,7 @@ game::game() {
     BR_TOP = 0;
 
     logic = tetris_logic::instance();
+    tm = timer::instance();
 }
 
 game* game::instance() {
@@ -237,4 +239,89 @@ void game::adjust_position() {
 
     memcpy(&old, &ws, sizeof(struct winsize));
     graphic::erase_display();
+}
+
+void game::prepare() {
+    quit_handler_init();
+    control::instance()->prepare_input();
+    graphic::erase_display();
+
+    draw();
+}
+
+void game::quit() {
+    graphic::restore();
+    control::instance()->restore_input();
+    graphic::erase_display();
+    logic->destroy();
+    printf("\n");
+}
+
+void game::run() {
+    pthread_t tid;
+    pthread_create(&tid, NULL, trd_timer, NULL);
+    pthread_detach(tid);
+    pthread_create(&tid, NULL, trd_draw, NULL);
+    pthread_detach(tid);
+
+    int c;
+    while(EOF != (c=getchar())) {
+        if(c == 'j')
+            game::instance()->move_down();
+        else if(c == 'k')
+            game::instance()->rotate();
+        else if(c == 'h')
+            game::instance()-> move_left();
+        else if(c == 'l')
+            game::instance()->move_right();
+        else if(c == 32)
+            game::instance()->drop_down();
+        else if(c == 'q')
+            break;
+        else
+            continue;
+    }
+}
+
+void game::quit_handler_init() {
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(struct sigaction));
+    sa.sa_handler = sigint;
+    sigaction(SIGINT, &sa, NULL);
+    atexit(on_quit);
+}
+
+void game::on_quit(void) {
+    instance()->quit();
+    exit(0);
+}
+
+void game::sigint(int n) {
+    on_quit();
+}
+
+void* game::trd_draw(void* p) {
+    static tetris_logic* l = tetris_logic::instance();
+    for(;;) {
+        if(0 == pthread_mutex_lock(&l->mut)) {
+            pthread_cond_wait(&l->cond, &l->mut);
+            ins->draw();
+            pthread_mutex_unlock(&l->mut);
+        }
+    }
+    return NULL;
+}
+
+void* game::trd_timer(void* p) {
+    static timer* t = timer::instance();
+    static tetris_logic* l = tetris_logic::instance();
+    for(;;) {
+        timer::instance()->update();
+        if(t->get_interval() >= speeds[l->level]) {
+            ins->move_down();
+            t->reset();
+        }
+        usleep(50);
+    }
+    return NULL;
 }
