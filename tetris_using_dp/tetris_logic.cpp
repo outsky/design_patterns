@@ -22,6 +22,7 @@ tetris_logic::tetris_logic() {
     pthread_mutex_init(&mut, NULL);
     pthread_cond_init(&cond, NULL);
 
+    cur = NULL;
     memset(playgrd, EMPTY, sizeof(char)*cols*lines);
 
     srand(time(NULL));
@@ -41,34 +42,31 @@ void tetris_logic::destroy() {
     pthread_cond_destroy(&cond);
 }
 
-int tetris_logic::can_move_down() {
-    int i;
-    for(i=0; i<4; ++i) {
+bool tetris_logic::can_move_down() {
+    for(int i=0; i<4; ++i) {
         block::pos* c = &cur->b[i];
         if(c->line+1>=lines || (c->line+1>=0 && playgrd[c->line+1][c->col]!=EMPTY))
-            return 0;
+            return false;
     }
-    return 1;
+    return true;
 }
 
-int tetris_logic::can_move_left() {
-    int i;
-    for(i=0; i<4; ++i) {
+bool tetris_logic::can_move_left() {
+    for(int i=0; i<4; ++i) {
         block::pos* c = &cur->b[i];
         if(c->col-1<0 || (c->line>=0 && playgrd[c->line][c->col-1]!=EMPTY))
-            return 0;
+            return false;
     }
-    return 1;
+    return true;
 }
 
-int tetris_logic::can_move_right() {
-    int i;
-    for(i=0; i<4; ++i) {
+bool tetris_logic::can_move_right() {
+    for(int i=0; i<4; ++i) {
         block::pos* c = &cur->b[i];
         if(c->col+1>=cols || (c->line>=0 && playgrd[c->line][c->col+1]!=EMPTY))
-            return 0;
+            return false;
     }
-    return 1;
+    return true;
 }
 
 int tetris_logic::drop_down(void) {
@@ -78,9 +76,9 @@ int tetris_logic::drop_down(void) {
 }
 
 int tetris_logic::move_down() {
-    if(1 != can_move_down()) {
+    if( !can_move_down() ) {
         stick();
-        if(1 == isgameover()) {
+        if( isgameover() ) {
             gameover();
             return 0;
         }
@@ -91,9 +89,7 @@ int tetris_logic::move_down() {
     }
 
     pthread_mutex_lock(&mut);
-    int i;
-    for(i=0; i<4; ++i)
-        cur->b[i].line++;
+    cur->move_down();
     pthread_cond_signal(&cond);
     pthread_mutex_unlock(&mut);
 
@@ -101,13 +97,11 @@ int tetris_logic::move_down() {
 }
 
 int tetris_logic::move_right() {
-    if(1 != can_move_right())
+    if( !can_move_right() )
         return 0;
 
     pthread_mutex_lock(&mut);
-    int i;
-    for(i=0; i<4; ++i)
-        cur->b[i].col++;
+    cur->move_right();
     pthread_cond_signal(&cond);
     pthread_mutex_unlock(&mut);
 
@@ -115,13 +109,11 @@ int tetris_logic::move_right() {
 }
 
 int tetris_logic::move_left() {
-    if(1 != can_move_left())
+    if( !can_move_left() )
         return 0;
 
     pthread_mutex_lock(&mut);
-    int i;
-    for(i=0; i<4; ++i)
-        cur->b[i].col--;
+    cur->move_left();
     pthread_cond_signal(&cond);
     pthread_mutex_unlock(&mut);
 
@@ -431,17 +423,16 @@ int tetris_logic::rotate_z(void) {
     return 1;
 }
 
-int tetris_logic::islinefull(int n) {
-    int i;
-    for(i=0; i<cols; ++i) {
+bool tetris_logic::islinefull(int n) {
+    for(int i=0; i<cols; ++i) {
         if(EMPTY == playgrd[n][i])
-            return 0;
+            return false;
     }
-    return 1;
+    return true;
 }
 
 int tetris_logic::clearline(int n) {
-    if(1 == islinefull(n)) {
+    if( islinefull(n) ) {
         for(int i=n; i>0; --i)
             memcpy(playgrd[i], playgrd[i-1], cols*sizeof(int));
         memset(playgrd[0], 0, cols*sizeof(char));
@@ -453,15 +444,14 @@ int tetris_logic::clearline(int n) {
 int tetris_logic::clearlines(void) {
     int from, to;
     from = to = cur->b[0].line;
-    int i;
-    for(i=1; i<4; ++i) {
+    for(int i=1; i<4; ++i) {
         if(cur->b[i].line < from)
             from = cur->b[i].line;
         if(cur->b[i].line > to)
             to = cur->b[i].line;
     }
     int count = 0;
-    for(i=from; i<=to; ++i) {
+    for(int i=from; i<=to; ++i) {
         if(1 == clearline(i))
             ++count;
     }
@@ -479,142 +469,142 @@ void tetris_logic::fillnext(void) {
     static int patterns[7][4][16] = {
         // i
         {
-        {0,0,2,0,
-         0,0,2,0,
-         0,0,2,0,
-         0,0,2,0},
-        {0,0,0,0,
-         0,0,0,0,
-         2,2,2,2,
-         0,0,0,0},
-        {0,0,2,0,
-         0,0,2,0,
-         0,0,2,0,
-         0,0,2,0},
-        {0,0,0,0,
-         0,0,0,0,
-         2,2,2,2,
-         0,0,0,0},
+            {0,0,2,0,
+             0,0,2,0,
+             0,0,2,0,
+             0,0,2,0},
+            {0,0,0,0,
+             0,0,0,0,
+             2,2,2,2,
+             0,0,0,0},
+            {0,0,2,0,
+             0,0,2,0,
+             0,0,2,0,
+             0,0,2,0},
+            {0,0,0,0,
+             0,0,0,0,
+             2,2,2,2,
+             0,0,0,0},
         },
 
         // j
         {
-        {0,0,0,0,
-         0,0,3,0,
-         0,0,3,0,
-         0,3,3,0},
-        {0,0,0,0,
-         0,0,0,0,
-         0,3,0,0,
-         0,3,3,3},
-        {0,0,0,0,
-         0,3,3,0,
-         0,3,0,0,
-         0,3,0,0},
-        {0,0,0,0,
-         0,0,0,0,
-         0,3,3,3,
-         0,0,0,3},
+            {0,0,0,0,
+             0,0,3,0,
+             0,0,3,0,
+             0,3,3,0},
+            {0,0,0,0,
+             0,0,0,0,
+             0,3,0,0,
+             0,3,3,3},
+            {0,0,0,0,
+             0,3,3,0,
+             0,3,0,0,
+             0,3,0,0},
+            {0,0,0,0,
+             0,0,0,0,
+             0,3,3,3,
+             0,0,0,3},
         },
 
         // l
         {
-        {0,0,0,0,
-         0,4,0,0,
-         0,4,0,0,
-         0,4,4,0},
-        {0,0,0,0,
-         0,0,0,0,
-         0,4,4,4,
-         0,4,0,0},
-        {0,0,0,0,
-         0,4,4,0,
-         0,0,4,0,
-         0,0,4,0},
-        {0,0,0,0,
-         0,0,0,0,
-         0,0,0,4,
-         0,4,4,4},
+            {0,0,0,0,
+             0,4,0,0,
+             0,4,0,0,
+             0,4,4,0},
+            {0,0,0,0,
+             0,0,0,0,
+             0,4,4,4,
+             0,4,0,0},
+            {0,0,0,0,
+             0,4,4,0,
+             0,0,4,0,
+             0,0,4,0},
+            {0,0,0,0,
+             0,0,0,0,
+             0,0,0,4,
+             0,4,4,4},
         },
 
         // o
         {
-        {0,0,0,0,
-         0,0,0,0,
-         0,5,5,0,
-         0,5,5,0},
-        {0,0,0,0,
-         0,0,0,0,
-         0,5,5,0,
-         0,5,5,0},
-        {0,0,0,0,
-         0,0,0,0,
-         0,5,5,0,
-         0,5,5,0},
-        {0,0,0,0,
-         0,0,0,0,
-         0,5,5,0,
-         0,5,5,0},
+            {0,0,0,0,
+             0,0,0,0,
+             0,5,5,0,
+             0,5,5,0},
+            {0,0,0,0,
+             0,0,0,0,
+             0,5,5,0,
+             0,5,5,0},
+            {0,0,0,0,
+             0,0,0,0,
+             0,5,5,0,
+             0,5,5,0},
+            {0,0,0,0,
+             0,0,0,0,
+             0,5,5,0,
+             0,5,5,0},
         },
 
         // s
         {
-        {0,0,0,0,
-         0,0,0,0,
-         0,0,6,6,
-         0,6,6,0},
-        {0,0,0,0,
-         0,6,0,0,
-         0,6,6,0,
-         0,0,6,0},
-        {0,0,0,0,
-         0,0,0,0,
-         0,0,6,6,
-         0,6,6,0},
-        {0,0,0,0,
-         0,6,0,0,
-         0,6,6,0,
-         0,0,6,0},
+            {0,0,0,0,
+             0,0,0,0,
+             0,0,6,6,
+             0,6,6,0},
+            {0,0,0,0,
+             0,6,0,0,
+             0,6,6,0,
+             0,0,6,0},
+            {0,0,0,0,
+             0,0,0,0,
+             0,0,6,6,
+             0,6,6,0},
+            {0,0,0,0,
+             0,6,0,0,
+             0,6,6,0,
+             0,0,6,0},
         },
 
         // t
         {
-        {0,0,0,0,
-         0,0,0,0,
-         0,7,7,7,
-         0,0,7,0},
-        {0,0,0,0,
-         0,0,7,0,
-         0,7,7,0,
-         0,0,7,0},
-        {0,0,0,0,
-         0,0,0,0,
-         0,0,7,0,
-         0,7,7,7},
-        {0,0,0,0,
-         0,7,0,0,
-         0,7,7,0,
-         0,7,0,0},
+            {0,0,0,0,
+             0,0,0,0,
+             0,7,7,7,
+             0,0,7,0},
+            {0,0,0,0,
+             0,0,7,0,
+             0,7,7,0,
+             0,0,7,0},
+            {0,0,0,0,
+             0,0,0,0,
+             0,0,7,0,
+             0,7,7,7},
+            {0,0,0,0,
+             0,7,0,0,
+             0,7,7,0,
+             0,7,0,0},
         },
 
         // z
         {
-        {0,0,0,0,
-         0,8,8,0,
-         0,0,8,8,
-         0,0,0,0},
-        {0,0,0,0,
-         0,8,0,0,
-         0,8,8,0,
-         0,0,8,0},
-        {0,0,0,0,
-         0,8,8,0,
-         0,0,8,8,
-         0,0,0,0},
-        {0,0,0,0,
-         0,8,0,0,
-         0,8,8,0,
-         0,0,8,0}
+            {0,0,0,0,
+             0,8,8,0,
+             0,0,8,8,
+             0,0,0,0},
+            {0,0,0,0,
+             0,8,0,0,
+             0,8,8,0,
+             0,0,8,0},
+            {0,0,0,0,
+             0,8,8,0,
+             0,0,8,8,
+             0,0,0,0},
+            {0,0,0,0,
+             0,8,0,0,
+             0,8,8,0,
+             0,0,8,0}
         }
     };
 
@@ -622,6 +612,11 @@ void tetris_logic::fillnext(void) {
 }
 
 void tetris_logic::fillcur(char type, int state) {
+    if(cur != NULL) {
+        delete cur;
+        cur = NULL;
+    }
+
     switch(type) {
         case I:
             i++;
@@ -669,8 +664,7 @@ void tetris_logic::fillcur(char type, int state) {
 
 void tetris_logic::settlecur(void) {
     int line = cur->b[0].line;
-    int i;
-    for(i=1; i<4; ++i) {
+    for(int i=1; i<4; ++i) {
         if(line < cur->b[i].line)
             line = cur->b[i].line;
     }
@@ -679,21 +673,19 @@ void tetris_logic::settlecur(void) {
 }
 
 void tetris_logic::stick(void) {
-    int i;
-    for(i=0; i<4; ++i) {
+    for(int i=0; i<4; ++i) {
         if(cur->b[i].line < 0)
             continue;
         playgrd[cur->b[i].line][cur->b[i].col] = get_type(cur->type);
     }
 }
 
-int tetris_logic::isgameover(void) {
-    int i;
-    for(i=0; i<cols; ++i) {
+bool tetris_logic::isgameover(void) {
+    for(int i=0; i<cols; ++i) {
         if(playgrd[0][i] != EMPTY)
-            return 1;
+            return true;
     }
-    return 0;
+    return false;
 }
 
 void tetris_logic::gameover(void) {
@@ -759,3 +751,4 @@ tetris_logic::TYPE tetris_logic::get_type(char c) {
     }
     return ret;
 }
+

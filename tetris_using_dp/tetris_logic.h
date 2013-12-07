@@ -24,16 +24,14 @@ class tetris_logic {
         int rotate();
         int drop_down(void);
 
-        int clearlines(void);
-
         static TYPE get_type(char c);
 
     private:
         tetris_logic();
 
-        int can_move_down();
-        int can_move_left();
-        int can_move_right();
+        bool can_move_down();
+        bool can_move_left();
+        bool can_move_right();
 
         void next(void);
         void fillnext(void);
@@ -41,8 +39,11 @@ class tetris_logic {
         void settlecur(void);
         void stick(void);
         void gameover(void);
-        int isgameover(void);
+        bool isgameover(void);
 
+        bool islinefull(int n);
+        int clearline(int n);
+        int clearlines(void);
         void onclearline(int n);
 
         int rotate_i(void);
@@ -52,8 +53,6 @@ class tetris_logic {
         int rotate_t(void);
         int rotate_z(void);
 
-        int islinefull(int n);
-        int clearline(int n);
         bool isempty(int line, int col);
 
     public:
