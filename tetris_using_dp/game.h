@@ -1,6 +1,8 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <map>
+
 #include "timer.h"
 #include "tetris_logic.h"
 
@@ -45,7 +47,7 @@ class game {
         void draw_blockrecord(void);
         void draw_status(void);
         void draw_pad(int bc, int n);
-        void draw_block(int preview, int n);
+        void draw_block(int preview, tetris_logic::TYPE type);
         void draw_cur(void);
 
     public:
@@ -64,6 +66,9 @@ class game {
         static game* ins;
         tetris_logic* logic;
         timer* tm;
+
+        std::map<tetris_logic::TYPE, int> bg_color;
+        std::map<tetris_logic::TYPE, const char*> fill_str;
 };
 
 #endif

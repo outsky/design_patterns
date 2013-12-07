@@ -4,15 +4,14 @@
 extern int speeds[];
 extern int levels[];
 
+#include <map>
+#include "block.h"
+
 class tetris_logic {
     public:
         enum TYPE {
             EMPTY = 0, ACTIVE,
             I, J, L, O, S, T, Z
-        };
-        struct pos {
-            int line;
-            int col;
         };
 
     public:
@@ -27,6 +26,8 @@ class tetris_logic {
 
         int clearlines(void);
 
+        static TYPE get_type(char c);
+
     private:
         tetris_logic();
 
@@ -36,7 +37,7 @@ class tetris_logic {
 
         void next(void);
         void fillnext(void);
-        void fillcur(void);
+        void fillcur(char type, int state);
         void settlecur(void);
         void stick(void);
         void gameover(void);
@@ -61,10 +62,9 @@ class tetris_logic {
         pthread_cond_t cond;
         pthread_mutex_t mut;
 
-        int curtype;
-        struct pos cur[4];
-        int playgrd[lines][cols]; // 0(empty); 1(active); 2(I); 3(J); 4(L); 5(O); 6(S); 7(T); 8(Z)
-        int nextgrd[4][4];
+        block* cur;
+        TYPE playgrd[lines][cols];
+        TYPE nextgrd[4][4];
         int score;
         int level;
         int one,two,three,four;
@@ -72,7 +72,6 @@ class tetris_logic {
 
     private:
         static tetris_logic* ins;
-        int curstate;
         int nexttyp;
         int nextstate;
 };

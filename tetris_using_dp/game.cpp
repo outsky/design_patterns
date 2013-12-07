@@ -24,6 +24,26 @@ game::game() {
     BR_LEFT = 0;
     BR_TOP = 0;
 
+    bg_color[tetris_logic::EMPTY] = graphic::B_BLACK;
+    bg_color[tetris_logic::ACTIVE] = graphic::B_BLACK;
+    bg_color[tetris_logic::I] = graphic::B_RED;
+    bg_color[tetris_logic::J] = graphic::B_GREEN;
+    bg_color[tetris_logic::L] = graphic::B_YELLOW;
+    bg_color[tetris_logic::O] = graphic::B_BLUE;
+    bg_color[tetris_logic::S] = graphic::B_MAGENTA;
+    bg_color[tetris_logic::T] = graphic::B_CYAN;
+    bg_color[tetris_logic::Z] = graphic::B_WHITE;
+
+    fill_str[tetris_logic::EMPTY] = "  ";
+    fill_str[tetris_logic::ACTIVE] = "  ";
+    fill_str[tetris_logic::I] = "()";
+    fill_str[tetris_logic::J] = "##";
+    fill_str[tetris_logic::L] = "$$";
+    fill_str[tetris_logic::O] = "{}";
+    fill_str[tetris_logic::S] = "<>";
+    fill_str[tetris_logic::T] = "&&";
+    fill_str[tetris_logic::Z] = "[]";
+
     logic = tetris_logic::instance();
     tm = timer::instance();
 }
@@ -52,19 +72,15 @@ void game::draw_pad(int bc, int n) {
     graphic::restore();
 }
 
-void game::draw_block(int preview, int n) {
-    static const int bc[] = {graphic::B_BLACK, graphic::B_BLACK, graphic::B_RED, graphic::B_GREEN, graphic::B_YELLOW, graphic::B_BLUE, graphic::B_MAGENTA, graphic::B_CYAN, graphic::B_WHITE};
-
-    static const char* s[] = {"  ", "  ", "()", "##", "$$", "{}", "<>", "&&", "[]"};
-
-    int f = n==tetris_logic::Z ? graphic::F_YELLOW : graphic::F_WHITE;
-    int b = bc[n];
+void game::draw_block(int preview, tetris_logic::TYPE type) {
+    int f = type==tetris_logic::Z ? graphic::F_YELLOW : graphic::F_WHITE;
+    int b = bg_color[type];
     if(1 == preview) {
-        b = n==tetris_logic::EMPTY ? graphic::B_BLUE : graphic::B_BLACK;
-        f = n==tetris_logic::EMPTY ? graphic::F_BLUE : graphic::F_BLACK;;
+        b = type==tetris_logic::EMPTY ? graphic::B_BLUE : graphic::B_BLACK;
+        f = type==tetris_logic::EMPTY ? graphic::F_BLUE : graphic::F_BLACK;;
     }
     graphic::setcolor(f, b);
-    printf("%s", s[n]);
+    printf("%s", fill_str[type]);
     graphic::restore();
 }
 
@@ -96,11 +112,11 @@ void game::draw_playgrd(void) {
 void game::draw_cur(void) {
     int i;
     for(i=0; i<4; ++i) {
-        if(logic->cur[i].line < 0)
+        if(logic->cur->b[i].line < 0)
             continue;
 
-        control::instance()->cursor_to(PGRD_LEFT+logic->cur[i].col*2, PGRD_TOP+logic->cur[i].line);
-        draw_block(0, logic->curtype);
+        control::instance()->cursor_to(PGRD_LEFT+logic->cur->b[i].col*2, PGRD_TOP+logic->cur->b[i].line);
+        draw_block(0, tetris_logic::get_type(logic->cur->type));
     }
 }
 

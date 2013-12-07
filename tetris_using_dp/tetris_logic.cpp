@@ -3,6 +3,7 @@
 #include <pthread.h>
 
 #include "tetris_logic.h"
+#include "block_i.h"
 
 #define MAXLEVEL 11
 int levels[MAXLEVEL] = {25, 50, 100, 180, 280, 400, 550, 700, 900, 1200, 1500};
@@ -15,8 +16,11 @@ tetris_logic::tetris_logic() {
     pthread_mutex_init(&mut, NULL);
     pthread_cond_init(&cond, NULL);
 
+    memset(playgrd, EMPTY, sizeof(char)*cols*lines);
+
     srand(time(NULL));
-    nexttyp = rand()%7 + 2;
+    //nexttyp = rand()%7 + 2;
+    nexttyp = I;
     nextstate = rand()%4;
     next();
 }
@@ -35,8 +39,8 @@ void tetris_logic::destroy() {
 int tetris_logic::can_move_down() {
     int i;
     for(i=0; i<4; ++i) {
-        struct pos* c = &cur[i];
-        if(c->line+1>=lines || (c->line+1>=0 && playgrd[c->line+1][c->col]!=0))
+        block::pos* c = &cur->b[i];
+        if(c->line+1>=lines || (c->line+1>=0 && playgrd[c->line+1][c->col]!=EMPTY))
             return 0;
     }
     return 1;
@@ -45,8 +49,8 @@ int tetris_logic::can_move_down() {
 int tetris_logic::can_move_left() {
     int i;
     for(i=0; i<4; ++i) {
-        struct pos* c = &cur[i];
-        if(c->col-1<0 || (c->line>=0 && playgrd[c->line][c->col-1]!=0))
+        block::pos* c = &cur->b[i];
+        if(c->col-1<0 || (c->line>=0 && playgrd[c->line][c->col-1]!=EMPTY))
             return 0;
     }
     return 1;
@@ -55,8 +59,8 @@ int tetris_logic::can_move_left() {
 int tetris_logic::can_move_right() {
     int i;
     for(i=0; i<4; ++i) {
-        struct pos* c = &cur[i];
-        if(c->col+1>=cols || (c->line>=0 && playgrd[c->line][c->col+1]!=0))
+        block::pos* c = &cur->b[i];
+        if(c->col+1>=cols || (c->line>=0 && playgrd[c->line][c->col+1]!=EMPTY))
             return 0;
     }
     return 1;
@@ -84,7 +88,7 @@ int tetris_logic::move_down() {
     pthread_mutex_lock(&mut);
     int i;
     for(i=0; i<4; ++i)
-        cur[i].line++;
+        cur->b[i].line++;
     pthread_cond_signal(&cond);
     pthread_mutex_unlock(&mut);
 
@@ -98,7 +102,7 @@ int tetris_logic::move_right() {
     pthread_mutex_lock(&mut);
     int i;
     for(i=0; i<4; ++i)
-        cur[i].col++;
+        cur->b[i].col++;
     pthread_cond_signal(&cond);
     pthread_mutex_unlock(&mut);
 
@@ -112,7 +116,7 @@ int tetris_logic::move_left() {
     pthread_mutex_lock(&mut);
     int i;
     for(i=0; i<4; ++i)
-        cur[i].col--;
+        cur->b[i].col--;
     pthread_cond_signal(&cond);
     pthread_mutex_unlock(&mut);
 
@@ -122,7 +126,7 @@ int tetris_logic::move_left() {
 int tetris_logic::rotate() {
     pthread_mutex_lock(&mut);
     int ret = 0;
-    switch(curtype) {
+    switch(get_type(cur->type)) {
         case I:
         ret = rotate_i();
         break;
@@ -166,10 +170,10 @@ int tetris_logic::rotate() {
 // <> : blocks
 // #  : this block blocks the rotation
 int tetris_logic::rotate_i(void) {
-    struct pos* c = cur;
+    block::pos* c = cur->b;
     int cl = c[1].line;
     int cc = c[1].col;
-    int nextstate = (curstate+1)%4;
+    int nextstate = (cur->state+1)%4;
     switch(nextstate) {
         /*
             <#><#>{#}
@@ -182,10 +186,6 @@ int tetris_logic::rotate_i(void) {
             if(!isempty(cl-1,cc-2) || !isempty(cl-1,cc-1) || !isempty(cl-1,cc) ||
               !isempty(cl+1,cc) || !isempty(cl+1,cc+1) || !isempty(cl+2,cc))
                 return 0;
-            cur[0].col = cur[2].col = cur[3].col = cc;
-            cur[0].line = cl-1;
-            cur[2].line = cl+1;
-            cur[3].line = cl+2;
             break;
 
         /*
@@ -199,21 +199,16 @@ int tetris_logic::rotate_i(void) {
             if(!isempty(cl-1,cc+1) || !isempty(cl+1,cc-1) || !isempty(cl+2,cc-1) ||
               !isempty(cl,cc-2) || !isempty(cl,cc-1) || !isempty(cl,cc+1))
                 return 0;
-            cur[0].line = cur[2].line = cur[3].line = cl;
-            cur[0].col = cc+1;
-            cur[2].col = cc-1;
-            cur[3].col = cc-2;
             break;
     }
-    curstate = nextstate;
+    cur->rotate();
     return 1;
 }
 
 int tetris_logic::rotate_j(void) {
-    struct pos* c = cur;
-    int cl = cur[1].line;
-    int cc = cur[1].col;
-    int nextstate = (curstate+1)%4;
+    int cl = cur->b[1].line;
+    int cc = cur->b[1].col;
+    int nextstate = (cur->state+1)%4;
     switch(nextstate) {
         /*
              <#>{#}
@@ -224,10 +219,10 @@ int tetris_logic::rotate_j(void) {
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc) ||
               !isempty(cl+1,cc-1) || !isempty(cl+1,cc))
                 return 0;
-            cur[0].col = cur[2].col = cc;
-            cur[3].col = cc-1;
-            cur[0].line = cl-1;
-            cur[2].line = cur[3].line = cl+1;
+            cur->b[0].col = cur->b[2].col = cc;
+            cur->b[3].col = cc-1;
+            cur->b[0].line = cl-1;
+            cur->b[2].line = cur->b[3].line = cl+1;
             break;
 
         /*
@@ -239,10 +234,10 @@ int tetris_logic::rotate_j(void) {
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc+1) ||
               !isempty(cl,cc-1) || !isempty(cl,cc+1))
                 return 0;
-            cur[0].line = cur[2].line = cl;
-            cur[3].line = cl-1;
-            cur[0].col = cc+1;
-            cur[2].col = cur[3].col = cc-1;
+            cur->b[0].line = cur->b[2].line = cl;
+            cur->b[3].line = cl-1;
+            cur->b[0].col = cc+1;
+            cur->b[2].col = cur->b[3].col = cc-1;
             break;
 
         /*
@@ -254,10 +249,10 @@ int tetris_logic::rotate_j(void) {
             if(!isempty(cl-1,cc) || !isempty(cl-1,cc+1) ||
               !isempty(cl+1,cc) || !isempty(cl+1,cc+1))
                 return 0;
-            cur[0].col = cur[2].col = cc;
-            cur[3].col = cc+1;
-            cur[0].line = cl+1;
-            cur[2].line = cur[3].line = cl-1;
+            cur->b[0].col = cur->b[2].col = cc;
+            cur->b[3].col = cc+1;
+            cur->b[0].line = cl+1;
+            cur->b[2].line = cur->b[3].line = cl-1;
             break;
 
         /*
@@ -269,20 +264,19 @@ int tetris_logic::rotate_j(void) {
             if(!isempty(cl,cc-1) || !isempty(cl,cc+1) ||
               !isempty(cl+1,cc-1) || !isempty(cl+1,cc+1))
                 return 0;
-            cur[0].line = cur[2].line = cl;
-            cur[3].line = cl+1;
-            cur[0].col = cc-1;
-            cur[2].col = cur[3].col = cc+1;
+            cur->b[0].line = cur->b[2].line = cl;
+            cur->b[3].line = cl+1;
+            cur->b[0].col = cc-1;
+            cur->b[2].col = cur->b[3].col = cc+1;
             break;
     }
-    curstate = nextstate;
     return 1;
 }
 
 int tetris_logic::rotate_l(void) {
-    int cl = cur[1].line;
-    int cc = cur[1].col;
-    int nextstate = (curstate+1)%4;
+    int cl = cur->b[1].line;
+    int cc = cur->b[1].col;
+    int nextstate = (cur->state+1)%4;
     switch(nextstate) {
         /*
              <#>{#}[3]
@@ -293,10 +287,10 @@ int tetris_logic::rotate_l(void) {
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc) ||
               !isempty(cl+1,cc) || !isempty(cl+1,cc+1))
                 return 0;
-            cur[0].col = cur[2].col = cc;
-            cur[3].col = cc+1;
-            cur[0].line = cl-1;
-            cur[2].line = cur[3].line = cl+1;
+            cur->b[0].col = cur->b[2].col = cc;
+            cur->b[3].col = cc+1;
+            cur->b[0].line = cl-1;
+            cur->b[2].line = cur->b[3].line = cl+1;
             break;
 
         /*
@@ -308,10 +302,10 @@ int tetris_logic::rotate_l(void) {
             if(!isempty(cl-1,cc+1) || !isempty(cl,cc+1) ||
               !isempty(cl,cc-1) || !isempty(cl+1,cc-1))
                 return 0;
-            cur[0].line = cur[2].line = cl;
-            cur[3].line = cl+1;
-            cur[0].col = cc+1;
-            cur[2].col = cur[3].col = cc-1;
+            cur->b[0].line = cur->b[2].line = cl;
+            cur->b[3].line = cl+1;
+            cur->b[0].col = cc+1;
+            cur->b[2].col = cur->b[3].col = cc-1;
             break;
 
         /*
@@ -323,10 +317,10 @@ int tetris_logic::rotate_l(void) {
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc) ||
               !isempty(cl+1,cc) || !isempty(cl+1,cc+1))
                 return 0;
-            cur[0].col = cur[2].col = cc;
-            cur[3].col = cc-1;
-            cur[0].line = cl+1;
-            cur[2].line = cur[3].line = cl-1;
+            cur->b[0].col = cur->b[2].col = cc;
+            cur->b[3].col = cc-1;
+            cur->b[0].line = cl+1;
+            cur->b[2].line = cur->b[3].line = cl-1;
             break;
 
         /*
@@ -338,20 +332,19 @@ int tetris_logic::rotate_l(void) {
             if(!isempty(cl-1,cc+1) || !isempty(cl,cc+1) ||
               !isempty(cl,cc-1) || !isempty(cl+1,cc-1))
                 return 0;
-            cur[0].line = cur[2].line = cl;
-            cur[3].line = cl-1;
-            cur[0].col = cc-1;
-            cur[2].col = cur[3].col = cc+1;
+            cur->b[0].line = cur->b[2].line = cl;
+            cur->b[3].line = cl-1;
+            cur->b[0].col = cc-1;
+            cur->b[2].col = cur->b[3].col = cc+1;
             break;
     }
-    curstate = nextstate;
     return 1;
 }
 
 int tetris_logic::rotate_s(void) {
-    int cl = cur[1].line;
-    int cc = cur[1].col;
-    int nextstate = (curstate+1)%4;
+    int cl = cur->b[1].line;
+    int cc = cur->b[1].col;
+    int nextstate = (cur->state+1)%4;
     switch(nextstate) {
         /*
              [3]{#}{#}
@@ -362,11 +355,11 @@ int tetris_logic::rotate_s(void) {
         case 2:
             if(!isempty(cl-1,cc) || !isempty(cl-1,cc+1) || !isempty(cl+1,cc-1))
                 return 0;
-            cur[0].col = cc+1;
-            cur[2].col = cc;
-            cur[3].col = cc-1;
-            cur[0].line = cl;
-            cur[2].line = cur[3].line = cl+1;
+            cur->b[0].col = cc+1;
+            cur->b[2].col = cc;
+            cur->b[3].col = cc-1;
+            cur->b[0].line = cl;
+            cur->b[2].line = cur->b[3].line = cl+1;
             break;
 
         /*
@@ -378,21 +371,20 @@ int tetris_logic::rotate_s(void) {
         case 3:
             if(!isempty(cl-1,cc-1) || !isempty(cl,cc-1) || !isempty(cl+1,cc+1))
                 return 0;
-            cur[0].col = cc;
-            cur[2].col = cur[3].col = cc-1;
-            cur[0].line = cl+1;
-            cur[2].line = cl;
-            cur[3].line = cl-1;
+            cur->b[0].col = cc;
+            cur->b[2].col = cur->b[3].col = cc-1;
+            cur->b[0].line = cl+1;
+            cur->b[2].line = cl;
+            cur->b[3].line = cl-1;
             break;
     }
-    curstate = nextstate;
     return 1;
 }
 
 int tetris_logic::rotate_t(void) {
-    int cl = cur[1].line;
-    int cc = cur[1].col;
-    int nextstate = (curstate+1)%4;
+    int cl = cur->b[1].line;
+    int cc = cur->b[1].col;
+    int nextstate = (cur->state+1)%4;
     switch(nextstate) {
         /*
                 [2]<#>
@@ -403,11 +395,11 @@ int tetris_logic::rotate_t(void) {
             if(!isempty(cl,cc-1) || !isempty(cl+1,cc-1) ||
               !isempty(cl-1,cc+1) || !isempty(cl+1,cc+1))
                 return 0;
-            cur[0].col = cc-1;
-            cur[2].col = cc+1;
-            cur[3].col = cc;
-            cur[0].line = cur[2].line = cl;
-            cur[3].line = cl+1;
+            cur->b[0].col = cc-1;
+            cur->b[2].col = cc+1;
+            cur->b[3].col = cc;
+            cur->b[0].line = cur->b[2].line = cl;
+            cur->b[3].line = cl+1;
             break;
 
         /*
@@ -419,11 +411,11 @@ int tetris_logic::rotate_t(void) {
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc) ||
               !isempty(cl+1,cc-1) || !isempty(cl+1,cc+1))
                 return 0;
-            cur[0].col = cur[2].col = cc;
-            cur[3].col = cc-1;
-            cur[0].line = cl-1;
-            cur[2].line = cl+1;
-            cur[3].line = cl;
+            cur->b[0].col = cur->b[2].col = cc;
+            cur->b[3].col = cc-1;
+            cur->b[0].line = cl-1;
+            cur->b[2].line = cl+1;
+            cur->b[3].line = cl;
             break;
 
         /*
@@ -435,11 +427,11 @@ int tetris_logic::rotate_t(void) {
             if(!isempty(cl-1,cc-1) || !isempty(cl+1,cc-1) ||
               !isempty(cl-1,cc+1) || !isempty(cl,cc+1))
                 return 0;
-            cur[0].col = cc+1;
-            cur[2].col = cc-1;
-            cur[3].col = cc;
-            cur[0].line = cur[2].line = cl;
-            cur[3].line = cl-1;
+            cur->b[0].col = cc+1;
+            cur->b[2].col = cc-1;
+            cur->b[3].col = cc;
+            cur->b[0].line = cur->b[2].line = cl;
+            cur->b[3].line = cl-1;
             break;
 
         /*
@@ -451,21 +443,20 @@ int tetris_logic::rotate_t(void) {
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc+1) ||
               !isempty(cl+1,cc) || !isempty(cl+1,cc+1))
                 return 0;
-            cur[0].col = cur[2].col = cc;
-            cur[3].col = cc+1;
-            cur[0].line = cl+1;
-            cur[2].line = cl-1;
-            cur[3].line = cl;
+            cur->b[0].col = cur->b[2].col = cc;
+            cur->b[3].col = cc+1;
+            cur->b[0].line = cl+1;
+            cur->b[2].line = cl-1;
+            cur->b[3].line = cl;
             break;
     }
-    curstate = nextstate;
     return 1;
 }
 
 int tetris_logic::rotate_z(void) {
-    int cl = cur[1].line;
-    int cc = cur[1].col;
-    int nextstate = (curstate+1)%4;
+    int cl = cur->b[1].line;
+    int cc = cur->b[1].col;
+    int nextstate = (cur->state+1)%4;
     switch(nextstate) {
         /*
              {#}[0]<#>
@@ -476,11 +467,11 @@ int tetris_logic::rotate_z(void) {
         case 2:
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc+1) || !isempty(cl,cc+1))
                 return 0;
-            cur[0].col = cc-1;
-            cur[2].col = cc;
-            cur[3].col = cc+1;
-            cur[0].line = cl;
-            cur[2].line = cur[3].line = cl+1;
+            cur->b[0].col = cc-1;
+            cur->b[2].col = cc;
+            cur->b[3].col = cc+1;
+            cur->b[0].line = cl;
+            cur->b[2].line = cur->b[3].line = cl+1;
             break;
 
         /*
@@ -492,21 +483,20 @@ int tetris_logic::rotate_z(void) {
         case 3:
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc) || !isempty(cl+1,cc-1))
                 return 0;
-            cur[0].col = cc;
-            cur[2].col = cur[3].col = cc-1;
-            cur[0].line = cl-1;
-            cur[2].line = cl;
-            cur[3].line = cl+1;
+            cur->b[0].col = cc;
+            cur->b[2].col = cur->b[3].col = cc-1;
+            cur->b[0].line = cl-1;
+            cur->b[2].line = cl;
+            cur->b[3].line = cl+1;
             break;
     }
-    curstate = nextstate;
     return 1;
 }
 
 int tetris_logic::islinefull(int n) {
     int i;
     for(i=0; i<cols; ++i) {
-        if(0 == playgrd[n][i])
+        if(EMPTY == playgrd[n][i])
             return 0;
     }
     return 1;
@@ -514,10 +504,9 @@ int tetris_logic::islinefull(int n) {
 
 int tetris_logic::clearline(int n) {
     if(1 == islinefull(n)) {
-        int i;
-        for(i=n; i>0; --i)
+        for(int i=n; i>0; --i)
             memcpy(playgrd[i], playgrd[i-1], cols*sizeof(int));
-        memset(playgrd[0], 0, cols*sizeof(int));
+        memset(playgrd[0], 0, cols*sizeof(char));
         return 1;
     }
     return 0;
@@ -525,13 +514,13 @@ int tetris_logic::clearline(int n) {
 
 int tetris_logic::clearlines(void) {
     int from, to;
-    from = to = cur[0].line;
+    from = to = cur->b[0].line;
     int i;
     for(i=1; i<4; ++i) {
-        if(cur[i].line < from)
-            from = cur[i].line;
-        if(cur[i].line > to)
-            to = cur[i].line;
+        if(cur->b[i].line < from)
+            from = cur->b[i].line;
+        if(cur->b[i].line > to)
+            to = cur->b[i].line;
     }
     int count = 0;
     for(i=from; i<=to; ++i) {
@@ -542,219 +531,242 @@ int tetris_logic::clearlines(void) {
 }
 
 void tetris_logic::next(void) {
-    static int i=0;
-    curtype = nexttyp;
-    curstate = nextstate;
-    nexttyp = rand()%7 + 2;
+    fillcur(nexttyp, nextstate);
+//    nexttyp = rand()%7 + 2;
+    nexttyp = I;
     nextstate = rand()%4;
     fillnext();
-    fillcur();
 }
 
 void tetris_logic::fillnext(void) {
-    static int pattern[7][4][16] = {
-        { // I
-            {0,0,2,0,
-             0,0,2,0,
-             0,0,2,0,
-             0,0,2,0},
-            {0,0,0,0,
-             0,0,0,0,
-             2,2,2,2,
-             0,0,0,0},
-            {0,0,2,0,
-             0,0,2,0,
-             0,0,2,0,
-             0,0,2,0},
-            {0,0,0,0,
-             0,0,0,0,
-             2,2,2,2,
-             0,0,0,0}
-        },{ // J
-            {0,0,0,0,
-             0,0,3,0,
-             0,0,3,0,
-             0,3,3,0},
-            {0,0,0,0,
-             0,0,0,0,
-             0,3,0,0,
-             0,3,3,3},
-            {0,0,0,0,
-             0,3,3,0,
-             0,3,0,0,
-             0,3,0,0},
-            {0,0,0,0,
-             0,0,0,0,
-             0,3,3,3,
-             0,0,0,3}
-        },{ // L
-            {0,0,0,0,
-             0,4,0,0,
-             0,4,0,0,
-             0,4,4,0},
-            {0,0,0,0,
-             0,0,0,0,
-             0,4,4,4,
-             0,4,0,0},
-            {0,0,0,0,
-             0,4,4,0,
-             0,0,4,0,
-             0,0,4,0},
-            {0,0,0,0,
-             0,0,0,0,
-             0,0,0,4,
-             0,4,4,4}
-        },{ // O
-            {0,0,0,0,
-             0,0,0,0,
-             0,5,5,0,
-             0,5,5,0},
-            {0,0,0,0,
-             0,0,0,0,
-             0,5,5,0,
-             0,5,5,0},
-            {0,0,0,0,
-             0,0,0,0,
-             0,5,5,0,
-             0,5,5,0},
-            {0,0,0,0,
-             0,0,0,0,
-             0,5,5,0,
-             0,5,5,0}
-        },{ // S
-            {0,0,0,0,
-             0,0,0,0,
-             0,0,6,6,
-             0,6,6,0},
-            {0,0,0,0,
-             0,6,0,0,
-             0,6,6,0,
-             0,0,6,0},
-            {0,0,0,0,
-             0,0,0,0,
-             0,0,6,6,
-             0,6,6,0},
-            {0,0,0,0,
-             0,6,0,0,
-             0,6,6,0,
-             0,0,6,0}
-        },{ // T
-            {0,0,0,0,
-             0,0,0,0,
-             0,7,7,7,
-             0,0,7,0},
-            {0,0,0,0,
-             0,0,7,0,
-             0,7,7,0,
-             0,0,7,0},
-            {0,0,0,0,
-             0,0,0,0,
-             0,0,7,0,
-             0,7,7,7},
-            {0,0,0,0,
-             0,7,0,0,
-             0,7,7,0,
-             0,7,0,0}
-        },{ // Z
-            {0,0,0,0,
-             0,8,8,0,
-             0,0,8,8,
-             0,0,0,0},
-            {0,0,0,0,
-             0,8,0,0,
-             0,8,8,0,
-             0,0,8,0},
-            {0,0,0,0,
-             0,8,8,0,
-             0,0,8,8,
-             0,0,0,0},
-            {0,0,0,0,
-             0,8,0,0,
-             0,8,8,0,
-             0,0,8,0}
+    static int patterns[7][4][16] = {
+        // i
+        {
+        {0,0,2,0,
+         0,0,2,0,
+         0,0,2,0,
+         0,0,2,0},
+        {0,0,0,0,
+         0,0,0,0,
+         2,2,2,2,
+         0,0,0,0},
+        {0,0,2,0,
+         0,0,2,0,
+         0,0,2,0,
+         0,0,2,0},
+        {0,0,0,0,
+         0,0,0,0,
+         2,2,2,2,
+         0,0,0,0},
+        },
+
+        // j
+        {
+        {0,0,0,0,
+         0,0,3,0,
+         0,0,3,0,
+         0,3,3,0},
+        {0,0,0,0,
+         0,0,0,0,
+         0,3,0,0,
+         0,3,3,3},
+        {0,0,0,0,
+         0,3,3,0,
+         0,3,0,0,
+         0,3,0,0},
+        {0,0,0,0,
+         0,0,0,0,
+         0,3,3,3,
+         0,0,0,3},
+        },
+
+        // l
+        {
+        {0,0,0,0,
+         0,4,0,0,
+         0,4,0,0,
+         0,4,4,0},
+        {0,0,0,0,
+         0,0,0,0,
+         0,4,4,4,
+         0,4,0,0},
+        {0,0,0,0,
+         0,4,4,0,
+         0,0,4,0,
+         0,0,4,0},
+        {0,0,0,0,
+         0,0,0,0,
+         0,0,0,4,
+         0,4,4,4},
+        },
+
+        // o
+        {
+        {0,0,0,0,
+         0,0,0,0,
+         0,5,5,0,
+         0,5,5,0},
+        {0,0,0,0,
+         0,0,0,0,
+         0,5,5,0,
+         0,5,5,0},
+        {0,0,0,0,
+         0,0,0,0,
+         0,5,5,0,
+         0,5,5,0},
+        {0,0,0,0,
+         0,0,0,0,
+         0,5,5,0,
+         0,5,5,0},
+        },
+
+        // s
+        {
+        {0,0,0,0,
+         0,0,0,0,
+         0,0,6,6,
+         0,6,6,0},
+        {0,0,0,0,
+         0,6,0,0,
+         0,6,6,0,
+         0,0,6,0},
+        {0,0,0,0,
+         0,0,0,0,
+         0,0,6,6,
+         0,6,6,0},
+        {0,0,0,0,
+         0,6,0,0,
+         0,6,6,0,
+         0,0,6,0},
+        },
+
+        // t
+        {
+        {0,0,0,0,
+         0,0,0,0,
+         0,7,7,7,
+         0,0,7,0},
+        {0,0,0,0,
+         0,0,7,0,
+         0,7,7,0,
+         0,0,7,0},
+        {0,0,0,0,
+         0,0,0,0,
+         0,0,7,0,
+         0,7,7,7},
+        {0,0,0,0,
+         0,7,0,0,
+         0,7,7,0,
+         0,7,0,0},
+        },
+
+        // z
+        {
+        {0,0,0,0,
+         0,8,8,0,
+         0,0,8,8,
+         0,0,0,0},
+        {0,0,0,0,
+         0,8,0,0,
+         0,8,8,0,
+         0,0,8,0},
+        {0,0,0,0,
+         0,8,8,0,
+         0,0,8,8,
+         0,0,0,0},
+        {0,0,0,0,
+         0,8,0,0,
+         0,8,8,0,
+         0,0,8,0}
         }
     };
 
-    if(nexttyp>Z || nexttyp<I || nextstate<0 || nextstate>3)
-        return;
-
-    memcpy(nextgrd, pattern[nexttyp-2][nextstate], sizeof(nextgrd));
+    memcpy(nextgrd, patterns[nexttyp][nextstate], sizeof(nextgrd));
 }
 
-void tetris_logic::fillcur(void) {
-    memset(cur, 0, sizeof(cur));
-    switch(curtype) {
+void tetris_logic::fillcur(char type, int state) {
+    switch(type) {
         case I:
             i++;
-            cur[0].line=-4; cur[0].col=cols/2;      // 0
-            cur[1].line=-3; cur[1].col=cols/2;      // 1
-            cur[2].line=-2; cur[2].col=cols/2;      // 2
-            cur[3].line=-1; cur[3].col=cols/2;      // 3
+            cur = new block_i(cols/2);
+            cur->state = state;
             break;
 
         case J:
             j++;
-            cur[0].line=-3; cur[0].col=cols/2;      //
-            cur[1].line=-2; cur[1].col=cols/2;      // 0
-            cur[2].line=-1; cur[2].col=cols/2;      // 1
-            cur[3].line=-1; cur[3].col=cols/2-1;    //32
+            /*
+            cur->b[0].line=-3; cur->b[0].col=cols/2;      //
+            cur->b[1].line=-2; cur->b[1].col=cols/2;      // 0
+            cur->b[2].line=-1; cur->b[2].col=cols/2;      // 1
+            cur->b[3].line=-1; cur->b[3].col=cols/2-1;    //32
+            */
             break;
 
         case L:
             l++;
-            cur[0].line=-3; cur[0].col=cols/2;      //
-            cur[1].line=-2; cur[1].col=cols/2;      // 0
-            cur[2].line=-1; cur[2].col=cols/2;      // 1
-            cur[3].line=-1; cur[3].col=cols/2+1;    // 23
+            /*
+            cur->b[0].line=-3; cur->b[0].col=cols/2;      //
+            cur->b[1].line=-2; cur->b[1].col=cols/2;      // 0
+            cur->b[2].line=-1; cur->b[2].col=cols/2;      // 1
+            cur->b[3].line=-1; cur->b[3].col=cols/2+1;    // 23
+            */
             break;
 
         case O:
             o++;
-            cur[0].line=-2; cur[0].col=cols/2;      //
-            cur[1].line=-2; cur[1].col=cols/2+1;    //
-            cur[2].line=-1; cur[2].col=cols/2;      // 01
-            cur[3].line=-1; cur[3].col=cols/2+1;    // 23
+            /*
+            cur->b[0].line=-2; cur->b[0].col=cols/2;      //
+            cur->b[1].line=-2; cur->b[1].col=cols/2+1;    //
+            cur->b[2].line=-1; cur->b[2].col=cols/2;      // 01
+            cur->b[3].line=-1; cur->b[3].col=cols/2+1;    // 23
+            */
             break;
 
         case S:
             s++;
-            cur[0].line=-2; cur[0].col=cols/2+1;    //
-            cur[1].line=-2; cur[1].col=cols/2;      //
-            cur[2].line=-1; cur[2].col=cols/2;      // 10
-            cur[3].line=-1; cur[3].col=cols/2-1;    //32
+            /*
+            cur->b[0].line=-2; cur->b[0].col=cols/2+1;    //
+            cur->b[1].line=-2; cur->b[1].col=cols/2;      //
+            cur->b[2].line=-1; cur->b[2].col=cols/2;      // 10
+            cur->b[3].line=-1; cur->b[3].col=cols/2-1;    //32
+            */
             break;
 
         case T:
             t++;
-            cur[0].line=-2; cur[0].col=cols/2-1;    //
-            cur[1].line=-2; cur[1].col=cols/2;      //
-            cur[2].line=-2; cur[2].col=cols/2+1;    //012
-            cur[3].line=-1; cur[3].col=cols/2;      // 3
+            /*
+            cur->b[0].line=-2; cur->b[0].col=cols/2-1;    //
+            cur->b[1].line=-2; cur->b[1].col=cols/2;      //
+            cur->b[2].line=-2; cur->b[2].col=cols/2+1;    //012
+            cur->b[3].line=-1; cur->b[3].col=cols/2;      // 3
+            */
             break;
 
         case Z:
             z++;
-            cur[0].line=-2; cur[0].col=cols/2-1;    //
-            cur[1].line=-2; cur[1].col=cols/2;      //
-            cur[2].line=-1; cur[2].col=cols/2;      //01
-            cur[3].line=-1; cur[3].col=cols/2+1;    // 23
+            /*
+            cur->b[0].line=-2; cur->b[0].col=cols/2-1;    //
+            cur->b[1].line=-2; cur->b[1].col=cols/2;      //
+            cur->b[2].line=-1; cur->b[2].col=cols/2;      //01
+            cur->b[3].line=-1; cur->b[3].col=cols/2+1;    // 23
+            */
             break;
 
         default:
             return;
     }
 
-    curstate = curstate==0 ? 3 : curstate-1;
+    cur->state = cur->state==0 ? 3 : cur->state-1;
     rotate();
     settlecur();
 }
 
 void tetris_logic::settlecur(void) {
-    int line = cur[0].line;
+    int line = cur->b[0].line;
     int i;
     for(i=1; i<4; ++i) {
-        if(line < cur[i].line)
-            line = cur[i].line;
+        if(line < cur->b[i].line)
+            line = cur->b[i].line;
     }
     for(; line<0; ++line)
         move_down();
@@ -763,16 +775,16 @@ void tetris_logic::settlecur(void) {
 void tetris_logic::stick(void) {
     int i;
     for(i=0; i<4; ++i) {
-        if(cur[i].line < 0)
+        if(cur->b[i].line < 0)
             continue;
-        playgrd[cur[i].line][cur[i].col] = curtype;
+        playgrd[cur->b[i].line][cur->b[i].col] = get_type(cur->type);
     }
 }
 
 int tetris_logic::isgameover(void) {
     int i;
     for(i=0; i<cols; ++i) {
-        if(playgrd[0][i] != 0)
+        if(playgrd[0][i] != EMPTY)
             return 1;
     }
     return 0;
@@ -806,4 +818,38 @@ void tetris_logic::onclearline(int n) {
 
 bool tetris_logic::isempty(int line, int col) {
     return (col>=0&&col<cols) && (line<0 || (line<lines&&playgrd[line][col]==EMPTY));
+}
+
+tetris_logic::TYPE tetris_logic::get_type(char c) {
+    tetris_logic::TYPE ret = tetris_logic::EMPTY;
+    switch( c ) {
+        case 'E':
+            ret = tetris_logic::EMPTY;
+            break;
+        case 'A':
+            ret = tetris_logic::ACTIVE;
+            break;
+        case 'I':
+            ret = tetris_logic::I;
+            break;
+        case 'J':
+            ret = tetris_logic::J;
+            break;
+        case 'L':
+            ret = tetris_logic::L;
+            break;
+        case 'O':
+            ret = tetris_logic::O;
+            break;
+        case 'S':
+            ret = tetris_logic::S;
+            break;
+        case 'T':
+            ret = tetris_logic::T;
+            break;
+        case 'Z':
+            ret = tetris_logic::Z;
+            break;
+    }
+    return ret;
 }

@@ -1,5 +1,5 @@
 tetris : *.h *.cpp
-	c++ -g -o $@ *.cpp -lpthread
+	c++ -g -Wall -o $@ *.cpp -lpthread
 
 clean :
 	rm -f tetris
