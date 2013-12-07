@@ -4,6 +4,12 @@
 
 #include "tetris_logic.h"
 #include "block_i.h"
+#include "block_j.h"
+#include "block_l.h"
+#include "block_o.h"
+#include "block_s.h"
+#include "block_t.h"
+#include "block_z.h"
 
 #define MAXLEVEL 11
 int levels[MAXLEVEL] = {25, 50, 100, 180, 280, 400, 550, 700, 900, 1200, 1500};
@@ -19,8 +25,7 @@ tetris_logic::tetris_logic() {
     memset(playgrd, EMPTY, sizeof(char)*cols*lines);
 
     srand(time(NULL));
-    //nexttyp = rand()%7 + 2;
-    nexttyp = I;
+    nexttyp = rand()%7 + 2;
     nextstate = rand()%4;
     next();
 }
@@ -219,10 +224,6 @@ int tetris_logic::rotate_j(void) {
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc) ||
               !isempty(cl+1,cc-1) || !isempty(cl+1,cc))
                 return 0;
-            cur->b[0].col = cur->b[2].col = cc;
-            cur->b[3].col = cc-1;
-            cur->b[0].line = cl-1;
-            cur->b[2].line = cur->b[3].line = cl+1;
             break;
 
         /*
@@ -234,10 +235,6 @@ int tetris_logic::rotate_j(void) {
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc+1) ||
               !isempty(cl,cc-1) || !isempty(cl,cc+1))
                 return 0;
-            cur->b[0].line = cur->b[2].line = cl;
-            cur->b[3].line = cl-1;
-            cur->b[0].col = cc+1;
-            cur->b[2].col = cur->b[3].col = cc-1;
             break;
 
         /*
@@ -249,10 +246,6 @@ int tetris_logic::rotate_j(void) {
             if(!isempty(cl-1,cc) || !isempty(cl-1,cc+1) ||
               !isempty(cl+1,cc) || !isempty(cl+1,cc+1))
                 return 0;
-            cur->b[0].col = cur->b[2].col = cc;
-            cur->b[3].col = cc+1;
-            cur->b[0].line = cl+1;
-            cur->b[2].line = cur->b[3].line = cl-1;
             break;
 
         /*
@@ -264,12 +257,9 @@ int tetris_logic::rotate_j(void) {
             if(!isempty(cl,cc-1) || !isempty(cl,cc+1) ||
               !isempty(cl+1,cc-1) || !isempty(cl+1,cc+1))
                 return 0;
-            cur->b[0].line = cur->b[2].line = cl;
-            cur->b[3].line = cl+1;
-            cur->b[0].col = cc-1;
-            cur->b[2].col = cur->b[3].col = cc+1;
             break;
     }
+    cur->rotate();
     return 1;
 }
 
@@ -287,10 +277,6 @@ int tetris_logic::rotate_l(void) {
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc) ||
               !isempty(cl+1,cc) || !isempty(cl+1,cc+1))
                 return 0;
-            cur->b[0].col = cur->b[2].col = cc;
-            cur->b[3].col = cc+1;
-            cur->b[0].line = cl-1;
-            cur->b[2].line = cur->b[3].line = cl+1;
             break;
 
         /*
@@ -302,10 +288,6 @@ int tetris_logic::rotate_l(void) {
             if(!isempty(cl-1,cc+1) || !isempty(cl,cc+1) ||
               !isempty(cl,cc-1) || !isempty(cl+1,cc-1))
                 return 0;
-            cur->b[0].line = cur->b[2].line = cl;
-            cur->b[3].line = cl+1;
-            cur->b[0].col = cc+1;
-            cur->b[2].col = cur->b[3].col = cc-1;
             break;
 
         /*
@@ -317,10 +299,6 @@ int tetris_logic::rotate_l(void) {
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc) ||
               !isempty(cl+1,cc) || !isempty(cl+1,cc+1))
                 return 0;
-            cur->b[0].col = cur->b[2].col = cc;
-            cur->b[3].col = cc-1;
-            cur->b[0].line = cl+1;
-            cur->b[2].line = cur->b[3].line = cl-1;
             break;
 
         /*
@@ -332,12 +310,9 @@ int tetris_logic::rotate_l(void) {
             if(!isempty(cl-1,cc+1) || !isempty(cl,cc+1) ||
               !isempty(cl,cc-1) || !isempty(cl+1,cc-1))
                 return 0;
-            cur->b[0].line = cur->b[2].line = cl;
-            cur->b[3].line = cl-1;
-            cur->b[0].col = cc-1;
-            cur->b[2].col = cur->b[3].col = cc+1;
             break;
     }
+    cur->rotate();
     return 1;
 }
 
@@ -355,11 +330,6 @@ int tetris_logic::rotate_s(void) {
         case 2:
             if(!isempty(cl-1,cc) || !isempty(cl-1,cc+1) || !isempty(cl+1,cc-1))
                 return 0;
-            cur->b[0].col = cc+1;
-            cur->b[2].col = cc;
-            cur->b[3].col = cc-1;
-            cur->b[0].line = cl;
-            cur->b[2].line = cur->b[3].line = cl+1;
             break;
 
         /*
@@ -371,13 +341,9 @@ int tetris_logic::rotate_s(void) {
         case 3:
             if(!isempty(cl-1,cc-1) || !isempty(cl,cc-1) || !isempty(cl+1,cc+1))
                 return 0;
-            cur->b[0].col = cc;
-            cur->b[2].col = cur->b[3].col = cc-1;
-            cur->b[0].line = cl+1;
-            cur->b[2].line = cl;
-            cur->b[3].line = cl-1;
             break;
     }
+    cur->rotate();
     return 1;
 }
 
@@ -395,11 +361,6 @@ int tetris_logic::rotate_t(void) {
             if(!isempty(cl,cc-1) || !isempty(cl+1,cc-1) ||
               !isempty(cl-1,cc+1) || !isempty(cl+1,cc+1))
                 return 0;
-            cur->b[0].col = cc-1;
-            cur->b[2].col = cc+1;
-            cur->b[3].col = cc;
-            cur->b[0].line = cur->b[2].line = cl;
-            cur->b[3].line = cl+1;
             break;
 
         /*
@@ -411,11 +372,6 @@ int tetris_logic::rotate_t(void) {
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc) ||
               !isempty(cl+1,cc-1) || !isempty(cl+1,cc+1))
                 return 0;
-            cur->b[0].col = cur->b[2].col = cc;
-            cur->b[3].col = cc-1;
-            cur->b[0].line = cl-1;
-            cur->b[2].line = cl+1;
-            cur->b[3].line = cl;
             break;
 
         /*
@@ -427,11 +383,6 @@ int tetris_logic::rotate_t(void) {
             if(!isempty(cl-1,cc-1) || !isempty(cl+1,cc-1) ||
               !isempty(cl-1,cc+1) || !isempty(cl,cc+1))
                 return 0;
-            cur->b[0].col = cc+1;
-            cur->b[2].col = cc-1;
-            cur->b[3].col = cc;
-            cur->b[0].line = cur->b[2].line = cl;
-            cur->b[3].line = cl-1;
             break;
 
         /*
@@ -443,13 +394,9 @@ int tetris_logic::rotate_t(void) {
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc+1) ||
               !isempty(cl+1,cc) || !isempty(cl+1,cc+1))
                 return 0;
-            cur->b[0].col = cur->b[2].col = cc;
-            cur->b[3].col = cc+1;
-            cur->b[0].line = cl+1;
-            cur->b[2].line = cl-1;
-            cur->b[3].line = cl;
             break;
     }
+    cur->rotate();
     return 1;
 }
 
@@ -467,11 +414,6 @@ int tetris_logic::rotate_z(void) {
         case 2:
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc+1) || !isempty(cl,cc+1))
                 return 0;
-            cur->b[0].col = cc-1;
-            cur->b[2].col = cc;
-            cur->b[3].col = cc+1;
-            cur->b[0].line = cl;
-            cur->b[2].line = cur->b[3].line = cl+1;
             break;
 
         /*
@@ -483,13 +425,9 @@ int tetris_logic::rotate_z(void) {
         case 3:
             if(!isempty(cl-1,cc-1) || !isempty(cl-1,cc) || !isempty(cl+1,cc-1))
                 return 0;
-            cur->b[0].col = cc;
-            cur->b[2].col = cur->b[3].col = cc-1;
-            cur->b[0].line = cl-1;
-            cur->b[2].line = cl;
-            cur->b[3].line = cl+1;
             break;
     }
+    cur->rotate();
     return 1;
 }
 
@@ -532,8 +470,7 @@ int tetris_logic::clearlines(void) {
 
 void tetris_logic::next(void) {
     fillcur(nexttyp, nextstate);
-//    nexttyp = rand()%7 + 2;
-    nexttyp = I;
+    nexttyp = rand()%7 + 2;
     nextstate = rand()%4;
     fillnext();
 }
@@ -681,7 +618,7 @@ void tetris_logic::fillnext(void) {
         }
     };
 
-    memcpy(nextgrd, patterns[nexttyp][nextstate], sizeof(nextgrd));
+    memcpy(nextgrd, patterns[nexttyp-2][nextstate], sizeof(nextgrd));
 }
 
 void tetris_logic::fillcur(char type, int state) {
@@ -689,74 +626,43 @@ void tetris_logic::fillcur(char type, int state) {
         case I:
             i++;
             cur = new block_i(cols/2);
-            cur->state = state;
             break;
 
         case J:
             j++;
-            /*
-            cur->b[0].line=-3; cur->b[0].col=cols/2;      //
-            cur->b[1].line=-2; cur->b[1].col=cols/2;      // 0
-            cur->b[2].line=-1; cur->b[2].col=cols/2;      // 1
-            cur->b[3].line=-1; cur->b[3].col=cols/2-1;    //32
-            */
+            cur = new block_j(cols/2);
             break;
 
         case L:
             l++;
-            /*
-            cur->b[0].line=-3; cur->b[0].col=cols/2;      //
-            cur->b[1].line=-2; cur->b[1].col=cols/2;      // 0
-            cur->b[2].line=-1; cur->b[2].col=cols/2;      // 1
-            cur->b[3].line=-1; cur->b[3].col=cols/2+1;    // 23
-            */
+            cur = new block_l(cols/2);
             break;
 
         case O:
             o++;
-            /*
-            cur->b[0].line=-2; cur->b[0].col=cols/2;      //
-            cur->b[1].line=-2; cur->b[1].col=cols/2+1;    //
-            cur->b[2].line=-1; cur->b[2].col=cols/2;      // 01
-            cur->b[3].line=-1; cur->b[3].col=cols/2+1;    // 23
-            */
+            cur = new block_o(cols/2);
             break;
 
         case S:
             s++;
-            /*
-            cur->b[0].line=-2; cur->b[0].col=cols/2+1;    //
-            cur->b[1].line=-2; cur->b[1].col=cols/2;      //
-            cur->b[2].line=-1; cur->b[2].col=cols/2;      // 10
-            cur->b[3].line=-1; cur->b[3].col=cols/2-1;    //32
-            */
+            cur = new block_s(cols/2);
             break;
 
         case T:
             t++;
-            /*
-            cur->b[0].line=-2; cur->b[0].col=cols/2-1;    //
-            cur->b[1].line=-2; cur->b[1].col=cols/2;      //
-            cur->b[2].line=-2; cur->b[2].col=cols/2+1;    //012
-            cur->b[3].line=-1; cur->b[3].col=cols/2;      // 3
-            */
+            cur = new block_t(cols/2);
             break;
 
         case Z:
             z++;
-            /*
-            cur->b[0].line=-2; cur->b[0].col=cols/2-1;    //
-            cur->b[1].line=-2; cur->b[1].col=cols/2;      //
-            cur->b[2].line=-1; cur->b[2].col=cols/2;      //01
-            cur->b[3].line=-1; cur->b[3].col=cols/2+1;    // 23
-            */
+            cur = new block_z(cols/2);
             break;
 
         default:
             return;
     }
 
-    cur->state = cur->state==0 ? 3 : cur->state-1;
+    cur->state = state==0 ? 3 : state-1;
     rotate();
     settlecur();
 }
