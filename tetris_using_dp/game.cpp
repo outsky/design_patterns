@@ -148,26 +148,47 @@ void game::draw_blockrecord(void) {
     graphic::restore();
 
     ctrl->cursor_to(BR_LEFT, BR_TOP+1);
-    graphic::setcolor(graphic::F_WHITE, graphic::B_RED);
+    if(logic->cur->type == 'I')
+        graphic::setcolor(graphic::F_WHITE, graphic::B_RED);
     printf(" (I) %4d ", logic->i);
+    graphic::restore();
+
     ctrl->cursor_to(BR_LEFT, BR_TOP+2);
-    graphic::setcolor(graphic::F_WHITE, graphic::B_GREEN);
+    if(logic->cur->type == 'J')
+        graphic::setcolor(graphic::F_WHITE, graphic::B_GREEN);
     printf(" #J# %4d ", logic->j);
+    graphic::restore();
+
     ctrl->cursor_to(BR_LEFT, BR_TOP+3);
-    graphic::setcolor(graphic::F_WHITE, graphic::B_YELLOW);
+    if(logic->cur->type == 'L')
+        graphic::setcolor(graphic::F_WHITE, graphic::B_YELLOW);
     printf(" $L$ %4d ", logic->l);
+    graphic::restore();
+
     ctrl->cursor_to(BR_LEFT, BR_TOP+4);
-    graphic::setcolor(graphic::F_WHITE, graphic::B_BLUE);
+    if(logic->cur->type == 'O')
+        graphic::setcolor(graphic::F_WHITE, graphic::B_BLUE);
     printf(" {O} %4d ", logic->o);
+    graphic::restore();
+
     ctrl->cursor_to(BR_LEFT, BR_TOP+5);
-    graphic::setcolor(graphic::F_WHITE, graphic::B_MAGENTA);
+    if(logic->cur->type == 'S')
+        graphic::setcolor(graphic::F_WHITE, graphic::B_MAGENTA);
     printf(" <S> %4d ", logic->s);
+    graphic::restore();
+
     ctrl->cursor_to(BR_LEFT, BR_TOP+6);
-    graphic::setcolor(graphic::F_WHITE, graphic::B_CYAN);
+    if(logic->cur->type == 'T')
+        graphic::setcolor(graphic::F_WHITE, graphic::B_CYAN);
     printf(" &T& %4d ", logic->t);
+    graphic::restore();
+
     ctrl->cursor_to(BR_LEFT, BR_TOP+7);
-    graphic::setcolor(graphic::F_YELLOW, graphic::B_WHITE);
+    if(logic->cur->type == 'Z')
+        graphic::setcolor(graphic::F_YELLOW, graphic::B_WHITE);
     printf(" [Z] %4d ", logic->z);
+    graphic::restore();
+
     ctrl->cursor_to(BR_LEFT, BR_TOP+8);
     graphic::setcolor(graphic::F_WHITE, graphic::B_BLACK);
     graphic::setattr(graphic::T_UNDERSCORE);
