@@ -46,6 +46,7 @@ game::game() {
 
     logic = tetris_logic::instance();
     tm = timer::instance();
+    ctrl = control::instance();
 }
 
 game* game::instance() {
@@ -72,10 +73,10 @@ void game::draw_pad(int bc, int n) {
     graphic::restore();
 }
 
-void game::draw_block(int preview, tetris_logic::TYPE type) {
+void game::draw_block(bool preview, tetris_logic::TYPE type) {
     int f = type==tetris_logic::Z ? graphic::F_YELLOW : graphic::F_WHITE;
     int b = bg_color[type];
-    if(1 == preview) {
+    if( preview ) {
         b = type==tetris_logic::EMPTY ? graphic::B_BLUE : graphic::B_BLACK;
         f = type==tetris_logic::EMPTY ? graphic::F_BLUE : graphic::F_BLACK;;
     }
@@ -85,17 +86,16 @@ void game::draw_block(int preview, tetris_logic::TYPE type) {
 }
 
 void game::draw_preview(void) {
-    int l,c;
-    for(l=0; l<4; ++l) {
-        control::instance()->cursor_to(PRV_LEFT, PRV_TOP+l);
+    for(int l=0; l<4; ++l) {
+        ctrl->cursor_to(PRV_LEFT, PRV_TOP+l);
         draw_pad(graphic::B_BLUE, 1);
-        for(c=0; c<4; ++c) {
-            control::instance()->cursor_to(PRV_LEFT+c*2+1, PRV_TOP+l);
-            draw_block(1, logic->nextgrd[l][c]);
+        for(int c=0; c<4; ++c) {
+            ctrl->cursor_to(PRV_LEFT+c*2+1, PRV_TOP+l);
+            draw_block(true, logic->nextgrd[l][c]);
         }
         draw_pad(graphic::B_BLUE, 1);
     }
-    control::instance()->cursor_to(PRV_LEFT, PRV_TOP+4);
+    ctrl->cursor_to(PRV_LEFT, PRV_TOP+4);
     draw_pad(graphic::B_BLUE, 10);
 }
 
@@ -103,73 +103,72 @@ void game::draw_playgrd(void) {
     int l,c;
     for(l=0; l<tetris_logic::lines; ++l) {
         for(c=0; c<tetris_logic::cols; ++c) {
-            control::instance()->cursor_to(PGRD_LEFT+c*2, PGRD_TOP+l);
-            draw_block(0, logic->playgrd[l][c]);
+            ctrl->cursor_to(PGRD_LEFT+c*2, PGRD_TOP+l);
+            draw_block(false, logic->playgrd[l][c]);
         }
     }
 }
 
 void game::draw_cur(void) {
-    int i;
-    for(i=0; i<4; ++i) {
+    for(int i=0; i<4; ++i) {
         if(logic->cur->b[i].line < 0)
             continue;
 
-        control::instance()->cursor_to(PGRD_LEFT+logic->cur->b[i].col*2, PGRD_TOP+logic->cur->b[i].line);
-        draw_block(0, tetris_logic::get_type(logic->cur->type));
+        ctrl->cursor_to(PGRD_LEFT+logic->cur->b[i].col*2, PGRD_TOP+logic->cur->b[i].line);
+        draw_block(false, tetris_logic::get_type(logic->cur->type));
     }
 }
 
 void game::draw_linerecord(void) {
-    control::instance()->cursor_to(LR_LEFT, LR_TOP);
+    ctrl->cursor_to(LR_LEFT, LR_TOP);
     graphic::setcolor(graphic::F_WHITE, graphic::B_BLACK);
     graphic::setattr(graphic::T_BOLD);
     printf("   LINE   ");
     graphic::restore();
     graphic::setcolor(graphic::F_BLACK, graphic::B_WHITE);
-    control::instance()->cursor_to(LR_LEFT, LR_TOP+1);
+    ctrl->cursor_to(LR_LEFT, LR_TOP+1);
     printf(" 1> %5d ", logic->one);
-    control::instance()->cursor_to(LR_LEFT, LR_TOP+2);
+    ctrl->cursor_to(LR_LEFT, LR_TOP+2);
     printf(" 2> %5d ", logic->two);
-    control::instance()->cursor_to(LR_LEFT, LR_TOP+3);
+    ctrl->cursor_to(LR_LEFT, LR_TOP+3);
     printf(" 3> %5d ", logic->three);
-    control::instance()->cursor_to(LR_LEFT, LR_TOP+4);
+    ctrl->cursor_to(LR_LEFT, LR_TOP+4);
     printf(" 4> %5d ", logic->four);
-    control::instance()->cursor_to(LR_LEFT, LR_TOP+5);
+    ctrl->cursor_to(LR_LEFT, LR_TOP+5);
     graphic::setattr(graphic::T_UNDERSCORE);
     printf(" sum %4d ", logic->one+logic->two+logic->three+logic->four);
     graphic::restore();
 }
 
 void game::draw_blockrecord(void) {
-    control::instance()->cursor_to(BR_LEFT, BR_TOP);
+    ctrl->cursor_to(BR_LEFT, BR_TOP);
     graphic::setcolor(graphic::F_WHITE, graphic::B_BLACK);
     graphic::setattr(graphic::T_BOLD);
     printf("  BLOCKS  ");
     graphic::restore();
 
-    control::instance()->cursor_to(BR_LEFT, BR_TOP+1);
+    ctrl->cursor_to(BR_LEFT, BR_TOP+1);
     graphic::setcolor(graphic::F_WHITE, graphic::B_RED);
     printf(" (I) %4d ", logic->i);
-    control::instance()->cursor_to(BR_LEFT, BR_TOP+2);
+    ctrl->cursor_to(BR_LEFT, BR_TOP+2);
     graphic::setcolor(graphic::F_WHITE, graphic::B_GREEN);
     printf(" #J# %4d ", logic->j);
-    control::instance()->cursor_to(BR_LEFT, BR_TOP+3);
+    ctrl->cursor_to(BR_LEFT, BR_TOP+3);
     graphic::setcolor(graphic::F_WHITE, graphic::B_YELLOW);
     printf(" $L$ %4d ", logic->l);
-    control::instance()->cursor_to(BR_LEFT, BR_TOP+4);
+    ctrl->cursor_to(BR_LEFT, BR_TOP+4);
     graphic::setcolor(graphic::F_WHITE, graphic::B_BLUE);
     printf(" {O} %4d ", logic->o);
-    control::instance()->cursor_to(BR_LEFT, BR_TOP+5);
+    ctrl->cursor_to(BR_LEFT, BR_TOP+5);
     graphic::setcolor(graphic::F_WHITE, graphic::B_MAGENTA);
     printf(" <S> %4d ", logic->s);
-    control::instance()->cursor_to(BR_LEFT, BR_TOP+6);
+    ctrl->cursor_to(BR_LEFT, BR_TOP+6);
     graphic::setcolor(graphic::F_WHITE, graphic::B_CYAN);
     printf(" &T& %4d ", logic->t);
-    control::instance()->cursor_to(BR_LEFT, BR_TOP+7);
+    ctrl->cursor_to(BR_LEFT, BR_TOP+7);
     graphic::setcolor(graphic::F_YELLOW, graphic::B_WHITE);
     printf(" [Z] %4d ", logic->z);
-    control::instance()->cursor_to(BR_LEFT, BR_TOP+8);
+    ctrl->cursor_to(BR_LEFT, BR_TOP+8);
     graphic::setcolor(graphic::F_WHITE, graphic::B_BLACK);
     graphic::setattr(graphic::T_UNDERSCORE);
     printf(" sum %4d ", logic->i+logic->j+logic->l+logic->o+logic->s+logic->t+logic->z);
@@ -177,63 +176,43 @@ void game::draw_blockrecord(void) {
 }
 
 void game::draw_status(void) {
-    control::instance()->cursor_to(ST_LEFT, ST_TOP);
+    ctrl->cursor_to(ST_LEFT, ST_TOP);
     graphic::setcolor(graphic::F_WHITE, graphic::B_BLACK);
     graphic::setattr(graphic::T_BOLD);
     printf("  LEVEL  ");
     graphic::restore();
     graphic::setcolor(graphic::F_BLACK, graphic::B_WHITE);
-    control::instance()->cursor_to(ST_LEFT, ST_TOP+1);
+    ctrl->cursor_to(ST_LEFT, ST_TOP+1);
     printf("%8d ", logic->level+1);
 
-    control::instance()->cursor_to(ST_LEFT, ST_TOP+3);
+    ctrl->cursor_to(ST_LEFT, ST_TOP+3);
     graphic::setcolor(graphic::F_WHITE, graphic::B_BLACK);
     graphic::setattr(graphic::T_BOLD);
     printf("  SCORE  ");
     graphic::restore();
     graphic::setcolor(graphic::F_BLACK, graphic::B_WHITE);
-    control::instance()->cursor_to(ST_LEFT, ST_TOP+4);
+    ctrl->cursor_to(ST_LEFT, ST_TOP+4);
     printf("%8d ", logic->score);
 
-    control::instance()->cursor_to(ST_LEFT, ST_TOP+6);
+    ctrl->cursor_to(ST_LEFT, ST_TOP+6);
     graphic::setcolor(graphic::F_WHITE, graphic::B_BLACK);
     graphic::setattr(graphic::T_BOLD);
     printf("  SPEED  ");
     graphic::restore();
     graphic::setcolor(graphic::F_BLACK, graphic::B_WHITE);
-    control::instance()->cursor_to(ST_LEFT, ST_TOP+7);
+    ctrl->cursor_to(ST_LEFT, ST_TOP+7);
     printf(" %7.2f ", 1000.0f/speeds[logic->level]);
 
-    control::instance()->cursor_to(ST_LEFT, ST_TOP+9);
+    ctrl->cursor_to(ST_LEFT, ST_TOP+9);
     graphic::setcolor(graphic::F_WHITE, graphic::B_BLACK);
     graphic::setattr(graphic::T_BOLD);
     printf("NEXTLEVEL");
     graphic::restore();
     graphic::setcolor(graphic::F_BLACK, graphic::B_WHITE);
-    control::instance()->cursor_to(ST_LEFT, ST_TOP+10);
+    ctrl->cursor_to(ST_LEFT, ST_TOP+10);
     printf("%8d ", levels[logic->level]-logic->score);
 
     graphic::restore();
-}
-
-void game::move_down() {
-    logic->move_down();
-}
-
-void game::move_left() {
-    logic->move_left();
-}
-
-void game::move_right() {
-    logic->move_right();
-}
-
-void game::drop_down() {
-    logic->drop_down();
-}
-
-void game::rotate() {
-    logic->rotate();
 }
 
 void game::adjust_position() {
@@ -260,7 +239,7 @@ void game::adjust_position() {
 
 void game::prepare() {
     quit_handler_init();
-    control::instance()->prepare_input();
+    ctrl->prepare_input();
     graphic::erase_display();
 
     draw();
@@ -268,7 +247,7 @@ void game::prepare() {
 
 void game::quit() {
     graphic::restore();
-    control::instance()->restore_input();
+    ctrl->restore_input();
     graphic::erase_display();
     logic->destroy();
     printf("\n");
@@ -284,15 +263,15 @@ void game::run() {
     int c;
     while(EOF != (c=getchar())) {
         if(c == 'j')
-            game::instance()->move_down();
+            logic->move_down();
         else if(c == 'k')
-            game::instance()->rotate();
+            logic->rotate();
         else if(c == 'h')
-            game::instance()-> move_left();
+            logic->move_left();
         else if(c == 'l')
-            game::instance()->move_right();
+            logic->move_right();
         else if(c == 32)
-            game::instance()->drop_down();
+            logic->drop_down();
         else if(c == 'q')
             break;
         else
@@ -335,7 +314,7 @@ void* game::trd_timer(void* p) {
     for(;;) {
         timer::instance()->update();
         if(t->get_interval() >= speeds[l->level]) {
-            ins->move_down();
+            tetris_logic::instance()->move_down();
             t->reset();
         }
         usleep(50);

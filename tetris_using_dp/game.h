@@ -5,6 +5,7 @@
 
 #include "timer.h"
 #include "tetris_logic.h"
+#include "control.h"
 
 class game {
     public:
@@ -17,12 +18,6 @@ class game {
 
     public:
         static game* instance();
-
-        void move_down();
-        void move_left();
-        void move_right();
-        void drop_down();
-        void rotate();
 
         void draw();
         void adjust_position();
@@ -47,7 +42,7 @@ class game {
         void draw_blockrecord(void);
         void draw_status(void);
         void draw_pad(int bc, int n);
-        void draw_block(int preview, tetris_logic::TYPE type);
+        void draw_block(bool preview, tetris_logic::TYPE type);
         void draw_cur(void);
 
     public:
@@ -66,6 +61,7 @@ class game {
         static game* ins;
         tetris_logic* logic;
         timer* tm;
+        control* ctrl;
 
         std::map<tetris_logic::TYPE, int> bg_color;
         std::map<tetris_logic::TYPE, const char*> fill_str;
