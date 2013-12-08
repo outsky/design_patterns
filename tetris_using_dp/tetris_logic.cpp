@@ -3,13 +3,13 @@
 #include <pthread.h>
 
 #include "tetris_logic.h"
-#include "block_i.h"
-#include "block_j.h"
-#include "block_l.h"
-#include "block_o.h"
-#include "block_s.h"
-#include "block_t.h"
-#include "block_z.h"
+#include "./block/block_i.h"
+#include "./block/block_j.h"
+#include "./block/block_l.h"
+#include "./block/block_o.h"
+#include "./block/block_s.h"
+#include "./block/block_t.h"
+#include "./block/block_z.h"
 
 #define MAXLEVEL 11
 int levels[MAXLEVEL] = {25, 50, 100, 180, 280, 400, 550, 700, 900, 1200, 1500};

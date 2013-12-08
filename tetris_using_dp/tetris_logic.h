@@ -5,7 +5,7 @@ extern int speeds[];
 extern int levels[];
 
 #include <map>
-#include "block.h"
+#include "./block/block.h"
 
 class tetris_logic {
     public:
