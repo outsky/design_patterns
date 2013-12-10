@@ -1,13 +1,29 @@
 #ifndef EVENTHANDLER_H
 #define EVENTHANDLER_H
 
-#include "event.h"
-
 class event_handler {
+     public:
+        enum {
+            CONNECT     = 1<<0,
+            DISCONNECT  = 1<<1,
+            READ        = 1<<2,
+            WRITE       = 1<<3,
+            TIMEOUT     = 1<<4
+        };
+
     public:
-        virtual void handle_read() {}
-        virtual void handle_write() {}
-        virtual handle_t get_handle() = 0;
+        event_handler(int fd);
+
+        virtual void handle_connect();
+        virtual void handle_disconnect();
+        virtual void handle_timeout();
+        virtual void handle_read();
+        virtual void handle_write();
+
+        int get_handle();
+
+    private:
+        int fd;
 };
 
 #endif

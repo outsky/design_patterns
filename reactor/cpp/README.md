@@ -7,8 +7,7 @@ STRUCTURE
 =========
 pattern core
 ------------
-* `event_t` : defines all supported event types
-* `event_set `: holds all interested events as well as their handle and handler
+* `event_set `: holds all interested events as well as their handler
 * `event_handler `: interface for handling certain event on specified handle
 * `reactor `:
     + registers event handlers and their associated handles

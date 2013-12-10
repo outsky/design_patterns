@@ -11,8 +11,9 @@
 #include "server.h"
 #include "msg.h"
 
-#include "../reactor.h"
-#include "server_handler.h"
+#include "../epoll_reactor.h"
+#include "acceptor.h"
+#include "logger.h"
 
 FILE* logfile = NULL;
 
@@ -37,12 +38,12 @@ void server::run() {
     running = true;
 
     // register accept handler to accept new connections
-    accept_handler* acpt_handler = new accept_handler(listenfd);
-    reactor::instance()->register_handler(READ, acpt_handler);
+    accept_handler* ah = new accept_handler(listenfd);
+    epoll_reactor::instance()->register_handler(event_handler::CONNECT, ah);
 
     // events demultiplex and dispatch
     while( running )
-        reactor::instance()->handle_events();
+        epoll_reactor::instance()->handle_events();
 }
 
 bool server::listen(int port) {
