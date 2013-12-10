@@ -5,10 +5,10 @@
 #include <signal.h>
 #include <pthread.h>
 
+#include "ansi_escape.h"
 #include "game.h"
 #include "graphic.h"
 #include "tetris_logic.h"
-#include "control.h"
 
 game* game::ins = NULL;
 
@@ -24,15 +24,15 @@ game::game() {
     BR_LEFT = 0;
     BR_TOP = 0;
 
-    bg_color[tetris_logic::EMPTY] = graphic::B_BLACK;
-    bg_color[tetris_logic::ACTIVE] = graphic::B_BLACK;
-    bg_color[tetris_logic::I] = graphic::B_RED;
-    bg_color[tetris_logic::J] = graphic::B_GREEN;
-    bg_color[tetris_logic::L] = graphic::B_YELLOW;
-    bg_color[tetris_logic::O] = graphic::B_BLUE;
-    bg_color[tetris_logic::S] = graphic::B_MAGENTA;
-    bg_color[tetris_logic::T] = graphic::B_CYAN;
-    bg_color[tetris_logic::Z] = graphic::B_WHITE;
+    bg_color[tetris_logic::EMPTY] = ansi_escape::B_BLACK;
+    bg_color[tetris_logic::ACTIVE] = ansi_escape::B_BLACK;
+    bg_color[tetris_logic::I] = ansi_escape::B_RED;
+    bg_color[tetris_logic::J] = ansi_escape::B_GREEN;
+    bg_color[tetris_logic::L] = ansi_escape::B_YELLOW;
+    bg_color[tetris_logic::O] = ansi_escape::B_BLUE;
+    bg_color[tetris_logic::S] = ansi_escape::B_MAGENTA;
+    bg_color[tetris_logic::T] = ansi_escape::B_CYAN;
+    bg_color[tetris_logic::Z] = ansi_escape::B_WHITE;
 
     fill_str[tetris_logic::EMPTY] = "  ";
     fill_str[tetris_logic::ACTIVE] = "  ";
@@ -46,7 +46,6 @@ game::game() {
 
     logic = tetris_logic::instance();
     tm = timer::instance();
-    ctrl = control::instance();
 }
 
 game* game::instance() {
@@ -67,43 +66,42 @@ void game::draw() {
 }
 
 void game::draw_pad(int bc, int n) {
-    graphic::setcolor(0, bc);
+    graphic::set_color(0, bc);
     for(; n>0; --n)
         printf(" ");
-    graphic::restore();
+    graphic::reset_color();
 }
 
 void game::draw_block(bool preview, tetris_logic::TYPE type) {
-    int f = type==tetris_logic::Z ? graphic::F_YELLOW : graphic::F_WHITE;
+    int f = type==tetris_logic::Z ? ansi_escape::F_YELLOW : ansi_escape::F_WHITE;
     int b = bg_color[type];
     if( preview ) {
-        b = type==tetris_logic::EMPTY ? graphic::B_BLUE : graphic::B_BLACK;
-        f = type==tetris_logic::EMPTY ? graphic::F_BLUE : graphic::F_BLACK;;
+        b = type==tetris_logic::EMPTY ? ansi_escape::B_BLUE : ansi_escape::B_BLACK;
+        f = type==tetris_logic::EMPTY ? ansi_escape::F_BLUE : ansi_escape::F_BLACK;;
     }
-    graphic::setcolor(f, b);
-    printf("%s", fill_str[type]);
-    graphic::restore();
+    graphic::draw_text(f, b, "%s", fill_str[type]);
+    //graphic::draw_text(f, b, "  ");
 }
 
 void game::draw_preview(void) {
     for(int l=0; l<4; ++l) {
-        ctrl->cursor_to(PRV_LEFT, PRV_TOP+l);
-        draw_pad(graphic::B_BLUE, 1);
+        ansi_escape::cursor_to(PRV_LEFT, PRV_TOP+l);
+        draw_pad(ansi_escape::B_BLUE, 1);
         for(int c=0; c<4; ++c) {
-            ctrl->cursor_to(PRV_LEFT+c*2+1, PRV_TOP+l);
+            ansi_escape::cursor_to(PRV_LEFT+c*2+1, PRV_TOP+l);
             draw_block(true, logic->nextgrd[l][c]);
         }
-        draw_pad(graphic::B_BLUE, 1);
+        draw_pad(ansi_escape::B_BLUE, 1);
     }
-    ctrl->cursor_to(PRV_LEFT, PRV_TOP+4);
-    draw_pad(graphic::B_BLUE, 10);
+    ansi_escape::cursor_to(PRV_LEFT, PRV_TOP+4);
+    draw_pad(ansi_escape::B_BLUE, 10);
 }
 
 void game::draw_playgrd(void) {
     int l,c;
     for(l=0; l<tetris_logic::lines; ++l) {
         for(c=0; c<tetris_logic::cols; ++c) {
-            ctrl->cursor_to(PGRD_LEFT+c*2, PGRD_TOP+l);
+            ansi_escape::cursor_to(PGRD_LEFT+c*2, PGRD_TOP+l);
             draw_block(false, logic->playgrd[l][c]);
         }
     }
@@ -114,126 +112,124 @@ void game::draw_cur(void) {
         if(logic->cur->b[i].line < 0)
             continue;
 
-        ctrl->cursor_to(PGRD_LEFT+logic->cur->b[i].col*2, PGRD_TOP+logic->cur->b[i].line);
+        ansi_escape::cursor_to(PGRD_LEFT+logic->cur->b[i].col*2, PGRD_TOP+logic->cur->b[i].line);
         draw_block(false, tetris_logic::get_type(logic->cur->type));
     }
 }
 
 void game::draw_linerecord(void) {
-    ctrl->cursor_to(LR_LEFT, LR_TOP);
-    graphic::setcolor(graphic::F_WHITE, graphic::B_BLACK);
-    graphic::setattr(graphic::T_BOLD);
-    printf("   LINE   ");
-    graphic::restore();
-    graphic::setcolor(graphic::F_BLACK, graphic::B_WHITE);
-    ctrl->cursor_to(LR_LEFT, LR_TOP+1);
+    ansi_escape::cursor_to(LR_LEFT, LR_TOP);
+    ansi_escape::setattr(ansi_escape::T_BOLD);
+    graphic::draw_text(ansi_escape::F_WHITE, ansi_escape::B_BLACK, "   LINE   ");
+    ansi_escape::setcolor(ansi_escape::F_BLACK, ansi_escape::B_WHITE);
+    ansi_escape::cursor_to(LR_LEFT, LR_TOP+1);
     printf(" 1> %5d ", logic->one);
-    ctrl->cursor_to(LR_LEFT, LR_TOP+2);
+    ansi_escape::cursor_to(LR_LEFT, LR_TOP+2);
     printf(" 2> %5d ", logic->two);
-    ctrl->cursor_to(LR_LEFT, LR_TOP+3);
+    ansi_escape::cursor_to(LR_LEFT, LR_TOP+3);
     printf(" 3> %5d ", logic->three);
-    ctrl->cursor_to(LR_LEFT, LR_TOP+4);
+    ansi_escape::cursor_to(LR_LEFT, LR_TOP+4);
     printf(" 4> %5d ", logic->four);
-    ctrl->cursor_to(LR_LEFT, LR_TOP+5);
-    graphic::setattr(graphic::T_UNDERSCORE);
+    ansi_escape::cursor_to(LR_LEFT, LR_TOP+5);
+    ansi_escape::setattr(ansi_escape::T_UNDERSCORE);
     printf(" sum %4d ", logic->one+logic->two+logic->three+logic->four);
-    graphic::restore();
+    graphic::reset_color();
 }
 
 void game::draw_blockrecord(void) {
-    ctrl->cursor_to(BR_LEFT, BR_TOP);
-    graphic::setcolor(graphic::F_WHITE, graphic::B_BLACK);
-    graphic::setattr(graphic::T_BOLD);
+    ansi_escape::cursor_to(BR_LEFT, BR_TOP);
+    ansi_escape::setcolor(ansi_escape::F_WHITE, ansi_escape::B_BLACK);
+    ansi_escape::setattr(ansi_escape::T_BOLD);
     printf("  BLOCKS  ");
-    graphic::restore();
+    graphic::reset_color();
 
-    ctrl->cursor_to(BR_LEFT, BR_TOP+1);
+    ansi_escape::cursor_to(BR_LEFT, BR_TOP+1);
     if(logic->cur->type == 'I')
-        graphic::setcolor(graphic::F_WHITE, graphic::B_RED);
+        ansi_escape::setcolor(ansi_escape::F_WHITE, ansi_escape::B_RED);
     printf(" (I) %4d ", logic->i);
-    graphic::restore();
+    graphic::reset_color();
 
-    ctrl->cursor_to(BR_LEFT, BR_TOP+2);
+    ansi_escape::cursor_to(BR_LEFT, BR_TOP+2);
     if(logic->cur->type == 'J')
-        graphic::setcolor(graphic::F_WHITE, graphic::B_GREEN);
+        ansi_escape::setcolor(ansi_escape::F_WHITE, ansi_escape::B_GREEN);
     printf(" #J# %4d ", logic->j);
-    graphic::restore();
+    graphic::reset_color();
 
-    ctrl->cursor_to(BR_LEFT, BR_TOP+3);
+    ansi_escape::cursor_to(BR_LEFT, BR_TOP+3);
     if(logic->cur->type == 'L')
-        graphic::setcolor(graphic::F_WHITE, graphic::B_YELLOW);
+        ansi_escape::setcolor(ansi_escape::F_WHITE, ansi_escape::B_YELLOW);
     printf(" $L$ %4d ", logic->l);
-    graphic::restore();
+    graphic::reset_color();
 
-    ctrl->cursor_to(BR_LEFT, BR_TOP+4);
+    ansi_escape::cursor_to(BR_LEFT, BR_TOP+4);
     if(logic->cur->type == 'O')
-        graphic::setcolor(graphic::F_WHITE, graphic::B_BLUE);
+        ansi_escape::setcolor(ansi_escape::F_WHITE, ansi_escape::B_BLUE);
     printf(" {O} %4d ", logic->o);
-    graphic::restore();
+    graphic::reset_color();
 
-    ctrl->cursor_to(BR_LEFT, BR_TOP+5);
+    ansi_escape::cursor_to(BR_LEFT, BR_TOP+5);
     if(logic->cur->type == 'S')
-        graphic::setcolor(graphic::F_WHITE, graphic::B_MAGENTA);
+        ansi_escape::setcolor(ansi_escape::F_WHITE, ansi_escape::B_MAGENTA);
     printf(" <S> %4d ", logic->s);
-    graphic::restore();
+    graphic::reset_color();
 
-    ctrl->cursor_to(BR_LEFT, BR_TOP+6);
+    ansi_escape::cursor_to(BR_LEFT, BR_TOP+6);
     if(logic->cur->type == 'T')
-        graphic::setcolor(graphic::F_WHITE, graphic::B_CYAN);
+        ansi_escape::setcolor(ansi_escape::F_WHITE, ansi_escape::B_CYAN);
     printf(" &T& %4d ", logic->t);
-    graphic::restore();
+    graphic::reset_color();
 
-    ctrl->cursor_to(BR_LEFT, BR_TOP+7);
+    ansi_escape::cursor_to(BR_LEFT, BR_TOP+7);
     if(logic->cur->type == 'Z')
-        graphic::setcolor(graphic::F_YELLOW, graphic::B_WHITE);
+        ansi_escape::setcolor(ansi_escape::F_YELLOW, ansi_escape::B_WHITE);
     printf(" [Z] %4d ", logic->z);
-    graphic::restore();
+    graphic::reset_color();
 
-    ctrl->cursor_to(BR_LEFT, BR_TOP+8);
-    graphic::setcolor(graphic::F_WHITE, graphic::B_BLACK);
-    graphic::setattr(graphic::T_UNDERSCORE);
+    ansi_escape::cursor_to(BR_LEFT, BR_TOP+8);
+    ansi_escape::setcolor(ansi_escape::F_WHITE, ansi_escape::B_BLACK);
+    ansi_escape::setattr(ansi_escape::T_UNDERSCORE);
     printf(" sum %4d ", logic->i+logic->j+logic->l+logic->o+logic->s+logic->t+logic->z);
-    graphic::restore();
+    graphic::reset_color();
 }
 
 void game::draw_status(void) {
-    ctrl->cursor_to(ST_LEFT, ST_TOP);
-    graphic::setcolor(graphic::F_WHITE, graphic::B_BLACK);
-    graphic::setattr(graphic::T_BOLD);
+    ansi_escape::cursor_to(ST_LEFT, ST_TOP);
+    ansi_escape::setcolor(ansi_escape::F_WHITE, ansi_escape::B_BLACK);
+    ansi_escape::setattr(ansi_escape::T_BOLD);
     printf("  LEVEL  ");
-    graphic::restore();
-    graphic::setcolor(graphic::F_BLACK, graphic::B_WHITE);
-    ctrl->cursor_to(ST_LEFT, ST_TOP+1);
+    graphic::reset_color();
+    ansi_escape::setcolor(ansi_escape::F_BLACK, ansi_escape::B_WHITE);
+    ansi_escape::cursor_to(ST_LEFT, ST_TOP+1);
     printf("%8d ", logic->level+1);
 
-    ctrl->cursor_to(ST_LEFT, ST_TOP+3);
-    graphic::setcolor(graphic::F_WHITE, graphic::B_BLACK);
-    graphic::setattr(graphic::T_BOLD);
+    ansi_escape::cursor_to(ST_LEFT, ST_TOP+3);
+    ansi_escape::setcolor(ansi_escape::F_WHITE, ansi_escape::B_BLACK);
+    ansi_escape::setattr(ansi_escape::T_BOLD);
     printf("  SCORE  ");
-    graphic::restore();
-    graphic::setcolor(graphic::F_BLACK, graphic::B_WHITE);
-    ctrl->cursor_to(ST_LEFT, ST_TOP+4);
+    graphic::reset_color();
+    ansi_escape::setcolor(ansi_escape::F_BLACK, ansi_escape::B_WHITE);
+    ansi_escape::cursor_to(ST_LEFT, ST_TOP+4);
     printf("%8d ", logic->score);
 
-    ctrl->cursor_to(ST_LEFT, ST_TOP+6);
-    graphic::setcolor(graphic::F_WHITE, graphic::B_BLACK);
-    graphic::setattr(graphic::T_BOLD);
+    ansi_escape::cursor_to(ST_LEFT, ST_TOP+6);
+    ansi_escape::setcolor(ansi_escape::F_WHITE, ansi_escape::B_BLACK);
+    ansi_escape::setattr(ansi_escape::T_BOLD);
     printf("  SPEED  ");
-    graphic::restore();
-    graphic::setcolor(graphic::F_BLACK, graphic::B_WHITE);
-    ctrl->cursor_to(ST_LEFT, ST_TOP+7);
+    graphic::reset_color();
+    ansi_escape::setcolor(ansi_escape::F_BLACK, ansi_escape::B_WHITE);
+    ansi_escape::cursor_to(ST_LEFT, ST_TOP+7);
     printf(" %7.2f ", 1000.0f/speeds[logic->level]);
 
-    ctrl->cursor_to(ST_LEFT, ST_TOP+9);
-    graphic::setcolor(graphic::F_WHITE, graphic::B_BLACK);
-    graphic::setattr(graphic::T_BOLD);
+    ansi_escape::cursor_to(ST_LEFT, ST_TOP+9);
+    ansi_escape::setcolor(ansi_escape::F_WHITE, ansi_escape::B_BLACK);
+    ansi_escape::setattr(ansi_escape::T_BOLD);
     printf("NEXTLEVEL");
-    graphic::restore();
-    graphic::setcolor(graphic::F_BLACK, graphic::B_WHITE);
-    ctrl->cursor_to(ST_LEFT, ST_TOP+10);
+    graphic::reset_color();
+    ansi_escape::setcolor(ansi_escape::F_BLACK, ansi_escape::B_WHITE);
+    ansi_escape::cursor_to(ST_LEFT, ST_TOP+10);
     printf("%8d ", levels[logic->level]-logic->score);
 
-    graphic::restore();
+    graphic::reset_color();
 }
 
 void game::adjust_position() {
@@ -255,21 +251,21 @@ void game::adjust_position() {
     LR_TOP = BR_TOP-6;
 
     memcpy(&old, &ws, sizeof(struct winsize));
-    graphic::erase_display();
+    ansi_escape::erase_display();
 }
 
 void game::prepare() {
     quit_handler_init();
-    ctrl->prepare_input();
-    graphic::erase_display();
+    prepare_input();
+    ansi_escape::erase_display();
 
     draw();
 }
 
 void game::quit() {
-    graphic::restore();
-    ctrl->restore_input();
-    graphic::erase_display();
+    graphic::reset_color();
+    restore_input();
+    ansi_escape::erase_display();
     logic->destroy();
     printf("\n");
 }
@@ -341,4 +337,22 @@ void* game::trd_timer(void* p) {
         usleep(50);
     }
     return NULL;
+}
+
+void game::prepare_input() {
+    struct termios tm;
+    tcgetattr(0, &tm_org);
+    tm = tm_org;
+    tm.c_lflag &= (~ICANON);
+    tm.c_lflag &= (~(ECHO|ECHOE|ECHOK|ECHONL));
+    tm.c_cc[VTIME] = 0;
+    tm.c_cc[VMIN] = 1;
+    tcsetattr(0, TCSANOW, &tm);
+
+    ansi_escape::cursor_hide();
+}
+
+void game::restore_input() {
+    tcsetattr(0, TCSANOW, &tm_org);
+    ansi_escape::cursor_show();
 }

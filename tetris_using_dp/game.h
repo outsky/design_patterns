@@ -2,10 +2,10 @@
 #define GAME_H
 
 #include <map>
+#include <termios.h>
 
 #include "timer.h"
 #include "tetris_logic.h"
-#include "control.h"
 
 class game {
     public:
@@ -28,6 +28,10 @@ class game {
 
     private:
         game();
+
+        // for buff problems
+        void prepare_input();
+        void restore_input();
 
         static void sigint(int);
         static void on_quit(void);
@@ -59,9 +63,10 @@ class game {
 
     private:
         static game* ins;
+        struct termios tm_org;
+
         tetris_logic* logic;
         timer* tm;
-        control* ctrl;
 
         std::map<tetris_logic::TYPE, int> bg_color;
         std::map<tetris_logic::TYPE, const char*> fill_str;
